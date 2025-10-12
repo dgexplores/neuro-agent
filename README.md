@@ -1,4 +1,4 @@
-# 🧠 NeuroAgent - AI-Driven Neurological Diagnosis Assistant
+#  NeuroAgent - AI-Driven Neurological Diagnosis Assistant
 
 [![Tests](https://img.shields.io/badge/tests-94%2F94%20passing-brightgreen)](./docs/FINAL_ACCEPTANCE_REPORT.md)
 [![Deployment](https://img.shields.io/badge/deployment-AWS%20Live-brightgreen)](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
@@ -11,33 +11,33 @@
 
 NeuroAgent is an enterprise-grade neurological diagnosis assistant system based on AWS AI Agent, integrating Amazon Bedrock's multi-modal AI capabilities to provide intelligent diagnostic suggestions, drug interaction checking, and medical image analysis for healthcare professionals.
 
-**🎯 Project Status**: Production Ready (100% Complete) | **📊 Test Coverage**: 100% | **🔒 Security**: 0 High-Severity Vulnerabilities
+** Project Status**: Production Ready (100% Complete) | ** Test Coverage**: 100% | ** Security**: 0 High-Severity Vulnerabilities
 
-**🚀 Live Demo**: [https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
+** Live Demo**:
 
 ---
 
-## ✨ Core Features
+##  Core Features
 
-### 🤖 AI-Powered Diagnosis
+###  AI-Powered Diagnosis
 - **Multi-modal Analysis**: Integrates patient symptoms, medical history, vital signs, and imaging data
 - **Differential Diagnosis**: Provides top 3 differential diagnoses with confidence scores
 - **Evidence-Based Recommendations**: Treatment suggestions based on clinical guidelines
 - **Drug Interaction Checking**: Checks for 14 common neurological medication interactions
 
-### 🏥 Medical Compliance
+###  Medical Compliance
 - **HIPAA-Aware**: Patient data anonymization, encrypted transmission
 - **Medical Disclaimers**: All AI outputs include appropriate medical disclaimers
 - **Audit Trail**: Complete case tracking records
 - **90-Day TTL**: Automatic data expiration mechanism
 
-### ⚡ Performance & Scalability
+###  Performance & Scalability
 - **Redis Caching**: 60-70% cache hit rate, p95 latency < 2s
 - **Blue/Green Deployment**: Zero-downtime deployment with automated rollback
 - **Load Tested**: Supports 100+ concurrent users
 - **Cost Optimized**: Estimated $82/month (with caching)
 
-### 🔐 Security Hardening
+###  Security Hardening
 - **Input Sanitization**: Detects 16 dangerous patterns (anti-prompt injection)
 - **JWT Authentication**: 7-layer security validation with algorithm whitelist
 - **CORS Protection**: Specific origin whitelist
@@ -45,17 +45,17 @@ NeuroAgent is an enterprise-grade neurological diagnosis assistant system based 
 
 ---
 
-## 📊 Project Status
+##  Project Status
 
 ### Live Deployment
 | Resource | Status | URL/Endpoint |
 |----------|--------|--------------|
-| API Gateway | ✅ Live | https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/ |
-| Lambda Function | ✅ Deployed | NeuroAgentAPI (Python 3.11, 1024MB) |
-| DynamoDB | ✅ Active | neuroagent-cases |
-| S3 Bucket | ✅ Active | neuroagent-images-100939136870-us-east-1 |
-| ElastiCache Redis | ✅ Running | neuroagent-redis.xjuedn.0001.use1.cache.amazonaws.com |
-| CloudWatch | ✅ Monitoring | 3 Alarms configured |
+| API Gateway |  Live | https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/ |
+| Lambda Function |  Deployed | NeuroAgentAPI (Python 3.11, 1024MB) |
+| DynamoDB |  Active | neuroagent-cases |
+| S3 Bucket |  Active | neuroagent-images-100939136870-us-east-1 |
+| ElastiCache Redis |  Running | neuroagent-redis.xjuedn.0001.use1.cache.amazonaws.com |
+| CloudWatch |  Monitoring | 3 Alarms configured |
 
 ### Test Results
 ```
@@ -70,24 +70,24 @@ tests/integration/ .................................................. [100%]
 
 - **Unit Tests**: 38/38 passing (100%)
 - **Integration Tests**: 56/56 passing (100%)
-- **Total**: 94/94 passing (100%) ✅
+- **Total**: 94/94 passing (100%) 
 
 ### Completion Status
 | Component | Status | Tests | Coverage |
 |-----------|--------|-------|----------|
-| AI Diagnosis Engine | ✅ 100% | 15/15 | 100% |
-| Image Analysis | ✅ 100% | 18/18 | 100% |
-| Drug Interactions | ✅ 100% | 15/15 | 100% |
-| Authentication | ✅ 100% | 15/15 | 100% |
-| Input Validation | ✅ 100% | 8/8 | 100% |
-| Caching Layer | ✅ 100% | Tested | 100% |
-| Security | ✅ 100% | Validated | 100% |
-| CDK Infrastructure | ✅ 100% | Synthesized | 100% |
-| **Total** | **✅ 100%** | **94/94** | **100%** |
+| AI Diagnosis Engine |  100% | 15/15 | 100% |
+| Image Analysis |  100% | 18/18 | 100% |
+| Drug Interactions |  100% | 15/15 | 100% |
+| Authentication |  100% | 15/15 | 100% |
+| Input Validation |  100% | 8/8 | 100% |
+| Caching Layer |  100% | Tested | 100% |
+| Security |  100% | Validated | 100% |
+| CDK Infrastructure |  100% | Synthesized | 100% |
+| **Total** | ** 100%** | **94/94** | **100%** |
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -211,33 +211,33 @@ npm test
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                         │
-│                    localhost:3000 / CloudFront                  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTPS
-┌──────────────────────────────▼──────────────────────────────────┐
-│                   API Gateway (REST API)                        │
-│            /api/v1/diagnosis, /api/v1/upload-image             │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────┐
-│                    Lambda Function (FastAPI)                    │
-│               Python 3.11 | 1024MB RAM | 5min timeout          │
-│                                                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐ │
-│  │  NeuroAgent      │  │ BedrockService   │  │ Auth/Cache   │ │
-│  │  (Diagnosis)     │──│ (AI Integration) │  │ (Security)   │ │
-│  └──────────────────┘  └──────────────────┘  └──────────────┘ │
-└─────────┬──────────────────────┬──────────────────┬────────────┘
-          │                      │                  │
-  ┌───────▼───────┐     ┌───────▼────────┐  ┌──────▼──────┐
-  │   DynamoDB    │     │ AWS Bedrock    │  │ ElastiCache │
-  │ (Case Storage)│     │ AgentCore/AI   │  │  (Redis)    │
-  └───────────────┘     └────────────────┘  └─────────────┘
+
+                        Frontend (React)                         
+                    localhost:3000 / CloudFront                  
+
+                                HTTPS
+
+                   API Gateway (REST API)                        
+            /api/v1/diagnosis, /api/v1/upload-image             
+
+                               
+
+                    Lambda Function (FastAPI)                    
+               Python 3.11 | 1024MB RAM | 5min timeout          
+                                                                 
+       
+    NeuroAgent         BedrockService      Auth/Cache    
+    (Diagnosis)      (AI Integration)    (Security)    
+       
+
+                                                  
+         
+     DynamoDB          AWS Bedrock       ElastiCache 
+   (Case Storage)      AgentCore/AI       (Redis)    
+         
 ```
 
 ### Technology Stack
@@ -272,7 +272,7 @@ npm test
 
 ---
 
-## 🚢 AWS Deployment
+##  AWS Deployment
 
 ### Complete Deployment Guide
 
@@ -354,7 +354,7 @@ curl http://localhost:8000/health
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Run All Tests
 ```bash
@@ -396,7 +396,7 @@ locust -f tests/load/locustfile.py \
 
 ---
 
-## 📚 API Documentation
+##  API Documentation
 
 ### Swagger UI
 Visit: `https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/docs`
@@ -502,13 +502,13 @@ Authorization: Bearer <JWT_TOKEN>
 
 ---
 
-## 🔐 Security
+##  Security
 
 ### Phase 8-2 Security Hardening
 
 #### 1. CORS Configuration
 ```python
-# ✅ Only allow specific origins
+#  Only allow specific origins
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -520,7 +520,7 @@ app.add_middleware(
 
 #### 2. Prompt Injection Protection
 ```python
-# ✅ Detect 16 dangerous patterns
+#  Detect 16 dangerous patterns
 DANGEROUS_PATTERNS = [
     r'ignore\s+(?:previous|all|above)\s+instructions?',
     r'(?:system|assistant|user)\s*[:=]',
@@ -534,7 +534,7 @@ sanitized_input = sanitizer.sanitize_text(user_input)
 
 #### 3. JWT Validation
 ```python
-# ✅ 7-layer security checks
+#  7-layer security checks
 def verify_token(token: str) -> str:
     payload = jwt.decode(
         token, JWT_SECRET_KEY,
@@ -551,16 +551,16 @@ def verify_token(token: str) -> str:
 ```
 
 ### Security Checklist
-- ✅ 0 High-severity vulnerabilities
-- ✅ All endpoints authenticated (except public /health)
-- ✅ Input validation and sanitization
-- ✅ No secrets in Git
-- ✅ HIPAA-aware implementation
-- ✅ Data encryption (in transit and at rest)
+-  0 High-severity vulnerabilities
+-  All endpoints authenticated (except public /health)
+-  Input validation and sanitization
+-  No secrets in Git
+-  HIPAA-aware implementation
+-  Data encryption (in transit and at rest)
 
 ---
 
-## 📖 Documentation
+##  Documentation
 
 ### Core Documentation
 - **[CLAUDE.md](./CLAUDE.md)** - Project overview and development guide (150+ lines)
@@ -582,7 +582,7 @@ def verify_token(token: str) -> str:
 
 ---
 
-## 💰 Cost Estimation
+##  Cost Estimation
 
 ### Monthly Cost (100,000 requests/month)
 
@@ -600,16 +600,16 @@ def verify_token(token: str) -> str:
 | **Total (with caching)** | | **~$82/month** |
 
 ### Cost Optimization
-- ✅ **Redis Caching**: Reduces 60% Bedrock calls (saves $72/month)
-- ✅ **Reserved ElastiCache**: 1-year commitment saves 40%
-- ✅ **S3 Intelligent Tiering**: Automatically moves infrequently accessed images
-- ✅ **DynamoDB On-Demand**: Pay only for actual usage
+-  **Redis Caching**: Reduces 60% Bedrock calls (saves $72/month)
+-  **Reserved ElastiCache**: 1-year commitment saves 40%
+-  **S3 Intelligent Tiering**: Automatically moves infrequently accessed images
+-  **DynamoDB On-Demand**: Pay only for actual usage
 
 ---
 
-## 🎯 Roadmap
+##  Roadmap
 
-### ✅ Phase 1-10 Complete (100%)
+###  Phase 1-10 Complete (100%)
 - [x] AI Diagnosis Engine (Phase 1-6)
 - [x] Medical Image Analysis (Phase 7-2)
 - [x] Load Testing & Caching (Phase 8-1)
@@ -620,13 +620,13 @@ def verify_token(token: str) -> str:
 - [x] All 94 tests passing (100%)
 - [x] AWS Live Deployment
 
-### 🔧 Post-Hackathon Improvements
+###  Post-Hackathon Improvements
 - [ ] Fix Lambda dependency packaging (requires Linux/Mac environment)
 - [ ] Implement CloudFront distribution for frontend
 - [ ] Add comprehensive monitoring dashboard
 - [ ] Optimize cold start performance
 
-### 🎯 Future Enhancements
+###  Future Enhancements
 - [ ] Real-time Streaming Diagnosis
 - [ ] SageMaker Medical Image Segmentation
 - [ ] Multi-language Support (English UI)
@@ -636,7 +636,7 @@ def verify_token(token: str) -> str:
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Please follow these steps:
 
@@ -654,21 +654,21 @@ We welcome contributions! Please follow these steps:
 
 ---
 
-## 📄 License
+##  License
 
 This project is for **educational and demonstration purposes only**.
 
 **Important Disclaimers**:
-- ⚠️ This system is designed for educational and demonstration purposes
-- ⚠️ All diagnostic suggestions require professional medical review
-- ⚠️ Not intended for direct patient care without physician supervision
-- ⚠️ Complies with AWS AI/ML responsible use guidelines
+-  This system is designed for educational and demonstration purposes
+-  All diagnostic suggestions require professional medical review
+-  Not intended for direct patient care without physician supervision
+-  Complies with AWS AI/ML responsible use guidelines
 
 See [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 ### AWS AI Agent Global Hackathon 2025
 This project was developed for the AWS AI Agent Global Hackathon 2025.
@@ -687,7 +687,7 @@ This project was developed for the AWS AI Agent Global Hackathon 2025.
 
 ---
 
-## 📞 Contact
+##  Contact
 
 ### Project Maintainer
 - **GitHub**: [@thc1006](https://github.com/thc1006)
@@ -704,9 +704,9 @@ This project was developed for the AWS AI Agent Global Hackathon 2025.
 
 ---
 
-## ⭐ Star History
+##  Star History
 
-If this project helps you, please give us a star! ⭐
+If this project helps you, please give us a star! 
 
 [![Star History Chart](https://api.star-history.com/svg?repos=thc1006/neuro-agent&type=Date)](https://star-history.com/#thc1006/neuro-agent&Date)
 
@@ -714,7 +714,7 @@ If this project helps you, please give us a star! ⭐
 
 <div align="center">
 
-**Built with ❤️ for Healthcare AI**
+**Built with  for Healthcare AI**
 
 [Report Bug](https://github.com/thc1006/neuro-agent/issues) ·
 [Request Feature](https://github.com/thc1006/neuro-agent/issues) ·
