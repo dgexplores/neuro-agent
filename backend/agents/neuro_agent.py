@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 import json
 import uuid
+import logging
 from datetime import datetime
 from fastapi import HTTPException
 
@@ -8,6 +9,9 @@ from ..models.patient import DiagnosisRequest, PatientCase
 from ..services.bedrock_service import BedrockService
 from ..utils.medical_knowledge import NeuroMedicalKnowledge
 from ..utils.input_sanitizer import sanitizer  # Phase 8-2: Security hardening
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class NeuroAgent:
     def __init__(self, bedrock_service: BedrockService):
@@ -91,9 +95,10 @@ class NeuroAgent:
 
         # Warn if excessive symptoms (but don't fail)
         if len(request.symptoms) > 20:
-            # Log warning but allow processing
-            # In production, this would use proper logging
-            pass
+            logger.warning(
+                f"Excessive symptoms detected: {len(request.symptoms)} symptoms provided. "
+                f"Consider reviewing for data quality. Maximum recommended: 20 symptoms."
+            )
 
     def _prepare_medical_context(self, request: DiagnosisRequest) -> Dict[str, Any]:
         """Prepare structured medical context for AI analysis"""

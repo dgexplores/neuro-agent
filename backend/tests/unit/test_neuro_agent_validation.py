@@ -196,12 +196,14 @@ async def test_valid_request_should_succeed(neuro_agent, valid_patient_info, val
 # ============================================================================
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Future iteration: test for maximum symptoms limit")
-async def test_excessive_symptoms_should_warn(neuro_agent, valid_patient_info):
+async def test_excessive_symptoms_should_warn(neuro_agent, valid_patient_info, caplog):
     """
-    FUTURE TEST: Too many symptoms (>20) should trigger a warning
+    TEST: Too many symptoms (>20) should trigger a warning
     but not fail the request
     """
+    import logging
+    caplog.set_level(logging.WARNING)
+
     # Create request with 25 symptoms
     excessive_symptoms = [
         Symptom(name=f"symptom_{i}", severity=SeverityEnum.MILD, duration_days=1)
@@ -220,17 +222,22 @@ async def test_excessive_symptoms_should_warn(neuro_agent, valid_patient_info):
 
     result = await neuro_agent.analyze_case(request)
 
-    # Should succeed but may include warning
+    # Should succeed but include warning in logs
     assert result is not None
-    # TODO: Check for warning in response
+    assert "Excessive symptoms detected" in caplog.text
+    assert "25 symptoms" in caplog.text
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Future iteration: test for suspicious input patterns")
 async def test_potentially_malicious_input_should_be_sanitized(neuro_agent, valid_patient_info):
     """
-    FUTURE TEST: Suspicious input (SQL injection, XSS attempts) should be sanitized
+    TEST: Suspicious input (SQL injection, XSS attempts) should be sanitized
+
+    This test verifies that the NeuroAgent properly sanitizes potentially malicious
+    input using the input_sanitizer module before passing to Bedrock.
     """
+    from unittest.mock import patch
+
     suspicious_symptom = Symptom(
         name="<script>alert('xss')</script>",
         severity=SeverityEnum.MILD,
@@ -244,15 +251,36 @@ async def test_potentially_malicious_input_should_be_sanitized(neuro_agent, vali
         vital_signs={},
         lab_results={},
         imaging_studies=[],
-        chief_complaint="Normal complaint",
+        chief_complaint="<img src=x onerror=alert('xss')>",
         history_present_illness="Normal history"
     )
 
-    result = await neuro_agent.analyze_case(request)
+    # Capture the prompt that gets built
+    with patch.object(neuro_agent.bedrock_service, 'invoke_agent', new_callable=AsyncMock) as mock_invoke:
+        mock_invoke.return_value = {
+            "output": {
+                "text": '{"differential_diagnoses": [], "recommendations": [], "risk_factors": [], "next_steps": []}'
+            }
+        }
 
-    # Should succeed and sanitize input
-    assert result is not None
-    # TODO: Verify input was sanitized
+        result = await neuro_agent.analyze_case(request)
+
+        # Should succeed and sanitize input
+        assert result is not None
+
+        # Verify the prompt was sanitized (no HTML/script tags or SQL injection)
+        assert mock_invoke.called
+        prompt_sent = mock_invoke.call_args[1]['input_text']
+
+        # Verify XSS attempts are sanitized
+        assert "<script>" not in prompt_sent
+        assert "alert(" not in prompt_sent
+        assert "<img" not in prompt_sent
+        assert "onerror=" not in prompt_sent
+
+        # Verify SQL injection attempts are sanitized
+        assert "DROP TABLE" not in prompt_sent
+        assert "'--" not in prompt_sent or "'; DROP" not in prompt_sent
 
 
 # ============================================================================

@@ -109,9 +109,19 @@ class InputSanitizer:
     @classmethod
     def _escape_special_chars(cls, text: str) -> str:
         """Escape special characters that could cause display issues"""
-        # Escape HTML-like tags but preserve normal angle brackets in context
+        # Remove all HTML tags (including potentially dangerous ones)
         text = re.sub(r'<script[^>]*>.*?</script>', '[SCRIPT_REMOVED]', text, flags=re.IGNORECASE | re.DOTALL)
         text = re.sub(r'<iframe[^>]*>.*?</iframe>', '[IFRAME_REMOVED]', text, flags=re.IGNORECASE | re.DOTALL)
+        text = re.sub(r'<style[^>]*>.*?</style>', '[STYLE_REMOVED]', text, flags=re.IGNORECASE | re.DOTALL)
+
+        # Remove all other HTML tags (including self-closing ones like <img>)
+        text = re.sub(r'<[^>]+>', '[HTML_TAG_REMOVED]', text)
+
+        # Remove JavaScript event handlers (onerror, onclick, etc.)
+        text = re.sub(r'\bon\w+\s*=\s*["\']?[^"\'>\s]*["\']?', '[EVENT_HANDLER_REMOVED]', text, flags=re.IGNORECASE)
+
+        # Remove javascript: protocol
+        text = re.sub(r'javascript\s*:', '[JS_PROTOCOL_REMOVED]', text, flags=re.IGNORECASE)
 
         return text
 
