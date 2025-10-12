@@ -70,8 +70,20 @@ class NeuroAgentStack(Stack):
         # Grant S3 permissions
         images_bucket.grant_read_write(lambda_role)
 
+        # Create Lambda Layer for dependencies
+        # This avoids Docker bundling requirement
+        requirements_layer = _lambda.LayerVersion(
+            self, "DependenciesLayer",
+            code=_lambda.Code.from_asset(
+                "../../lambda_layer",  # We'll create this directory with dependencies
+                exclude=["*.pyc", "__pycache__"]
+            ),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_11],
+            description="NeuroAgent Python dependencies"
+        )
+
         # Lambda function
-        # Phase 9-1: Enhanced environment variables
+        # Phase 9-1: Enhanced environment variables (using Lambda Layer for dependencies)
         api_lambda = _lambda.Function(
             self, "NeuroAgentAPI",
             runtime=_lambda.Runtime.PYTHON_3_11,
@@ -82,9 +94,11 @@ class NeuroAgentStack(Stack):
                     "*.md", ".git", ".github", "node_modules", "frontend",
                     "infrastructure", "tests", "docs", "data", "scripts",
                     "*.pyc", "__pycache__", ".pytest_cache", ".env",
-                    "*.log", "*.spec.ts", "locustfile.py", ".venv", "venv"
+                    "*.log", "*.spec.ts", "locustfile.py", ".venv", "venv",
+                    "cdk.out", "lambda_layer"
                 ]
             ),
+            layers=[requirements_layer],
             timeout=Duration.minutes(5),
             memory_size=1024,
             role=lambda_role,

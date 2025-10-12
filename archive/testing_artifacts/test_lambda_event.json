@@ -1,0 +1,29 @@
+{
+  "resource": "/{proxy+}",
+  "path": "/health",
+  "httpMethod": "GET",
+  "headers": {
+    "Accept": "application/json",
+    "Host": "1w80v6fnw1.execute-api.us-east-1.amazonaws.com"
+  },
+  "queryStringParameters": null,
+  "pathParameters": {
+    "proxy": "health"
+  },
+  "stageVariables": null,
+  "requestContext": {
+    "path": "/prod/health",
+    "accountId": "100939136870",
+    "resourceId": "123456",
+    "stage": "prod",
+    "requestId": "test-invoke-request",
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    },
+    "resourcePath": "/{proxy+}",
+    "httpMethod": "GET",
+    "apiId": "1w80v6fnw1"
+  },
+  "body": null,
+  "isBase64Encoded": false
+}
