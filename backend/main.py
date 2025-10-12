@@ -20,13 +20,20 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware - SECURITY HARDENED (Phase 8-2)
+# Use environment-based origin whitelist instead of wildcard
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:3001"  # Default for development
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=ALLOWED_ORIGINS,  # ✅ FIXED: Whitelist specific origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],  # ✅ FIXED: Only required methods
+    allow_headers=["Authorization", "Content-Type"],  # ✅ FIXED: Specific headers only
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 # Security
@@ -65,6 +72,9 @@ async def create_diagnosis(
             risk_factors=result["risk_factors"],
             next_steps=result["next_steps"]
         )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for validation errors)
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -84,9 +94,78 @@ async def upload_medical_image(
         # Process image
         result = await neuro_agent.analyze_image(file)
 
-        return {"image_id": result["image_id"], "analysis": result["analysis"]}
+        # Return complete analysis result (Phase 7-2)
+        return result
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for invalid file type)
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/drug-interactions")
+async def check_drug_interactions(
+    medications: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Check for drug interactions among a list of medications
+
+    Phase 8: Dedicated Drug Interaction Endpoint
+
+    Request body:
+    {
+        "medications": ["drug1", "drug2", "drug3"]
+    }
+
+    Returns list of interactions sorted by severity (contraindicated > severe > moderate > minor)
+    """
+    try:
+        user_id = verify_token(credentials.credentials)
+
+        # Validate input
+        if "medications" not in medications:
+            raise HTTPException(
+                status_code=400,
+                detail="Request must include 'medications' field with list of medication names"
+            )
+
+        meds_list = medications["medications"]
+
+        if not isinstance(meds_list, list):
+            raise HTTPException(
+                status_code=400,
+                detail="'medications' must be a list of strings"
+            )
+
+        if len(meds_list) < 2:
+            return {
+                "medication_count": len(meds_list),
+                "interactions_found": 0,
+                "interactions": [],
+                "message": "At least 2 medications required for interaction checking"
+            }
+
+        # Check for interactions using knowledge base
+        interactions = neuro_agent.knowledge_base.check_drug_interactions(meds_list)
+
+        return {
+            "medication_count": len(meds_list),
+            "medications_checked": meds_list,
+            "interactions_found": len(interactions),
+            "interactions": interactions,
+            "severity_summary": {
+                "contraindicated": len([i for i in interactions if i["severity"] == "contraindicated"]),
+                "severe": len([i for i in interactions if i["severity"] == "severe"]),
+                "moderate": len([i for i in interactions if i["severity"] == "moderate"]),
+                "minor": len([i for i in interactions if i["severity"] == "minor"])
+            }
+        }
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/v1/cases/{case_id}")
 async def get_case(

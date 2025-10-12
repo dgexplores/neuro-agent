@@ -1,0 +1,25 @@
+{
+  "name": "neuroagent-cdk",
+  "version": "1.0.0",
+  "description": "NeuroAgent AWS CDK Infrastructure with Blue/Green Deployment",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy",
+    "deploy:bluegreen": "npx ts-node cdk-bluegreen.ts deploy",
+    "shift": "npx ts-node cdk-bluegreen.ts shift",
+    "complete": "npx ts-node cdk-bluegreen.ts complete",
+    "rollback": "npx ts-node cdk-bluegreen.ts rollback"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "aws-cdk": "^2.110.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.110.0",
+    "constructs": "^10.3.0"
+  }
+}

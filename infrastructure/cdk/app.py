@@ -45,16 +45,20 @@ class NeuroAgentStack(Stack):
             ]
         )
 
-        # Add Bedrock permissions
+        # Add Bedrock permissions (Phase 9-1: Scoped to specific agent)
+        bedrock_agent_id = self.node.try_get_context("bedrock_agent_id")
+        bedrock_agent_arn = f"arn:aws:bedrock:{self.region}:{self.account}:agent/*" if bedrock_agent_id else "*"
+
         lambda_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "bedrock:InvokeModel",
                     "bedrock:InvokeAgent",
-                    "bedrock-agent-runtime:InvokeAgent"
+                    "bedrock-agent-runtime:InvokeAgent",
+                    "bedrock:InvokeModelWithResponseStream"  # For streaming responses
                 ],
-                resources=["*"]
+                resources=[bedrock_agent_arn] if bedrock_agent_id else ["*"]
             )
         )
 
@@ -65,6 +69,7 @@ class NeuroAgentStack(Stack):
         images_bucket.grant_read_write(lambda_role)
 
         # Lambda function
+        # Phase 9-1: Enhanced environment variables
         api_lambda = _lambda.Function(
             self, "NeuroAgentAPI",
             runtime=_lambda.Runtime.PYTHON_3_11,
@@ -74,21 +79,43 @@ class NeuroAgentStack(Stack):
             memory_size=1024,
             role=lambda_role,
             environment={
+                # Storage
                 "DYNAMODB_TABLE_NAME": cases_table.table_name,
                 "S3_BUCKET_NAME": images_bucket.bucket_name,
-                "AWS_REGION": self.region
+                "AWS_REGION": self.region,
+
+                # Bedrock Configuration (Phase 9-1)
+                "BEDROCK_AGENTCORE_AGENT_ID": self.node.try_get_context("bedrock_agent_id") or "",
+                "BEDROCK_MODEL_ID": "anthropic.claude-3-sonnet-20240229-v1:0",
+
+                # Authentication & Security (Phase 8-2)
+                "JWT_SECRET_KEY": self.node.try_get_context("jwt_secret_key") or "",
+                "ALLOWED_ORIGINS": self.node.try_get_context("allowed_origins") or "https://neuroagent.example.com",
+                "ENV": "production",
+
+                # Caching Configuration (Phase 8-1)
+                "REDIS_ENABLED": self.node.try_get_context("redis_enabled") or "false",
+                "REDIS_HOST": self.node.try_get_context("redis_host") or "",
+                "REDIS_PORT": "6379",
+                "REDIS_DB": "0",
             }
         )
 
-        # API Gateway
+        # API Gateway (Phase 9-1: Secure CORS configuration)
+        # Get allowed origins from context (should match ALLOWED_ORIGINS env var)
+        allowed_origins = self.node.try_get_context("allowed_origins")
+        cors_origins = allowed_origins.split(",") if allowed_origins else ["https://neuroagent.example.com"]
+
         api = apigw.LambdaRestApi(
             self, "NeuroAgentAPI",
             handler=api_lambda,
             proxy=False,
             default_cors_preflight_options=apigw.CorsOptions(
-                allow_origins=apigw.Cors.ALL_ORIGINS,
-                allow_methods=apigw.Cors.ALL_METHODS,
-                allow_headers=["*"]
+                allow_origins=cors_origins,  # ✅ SECURITY: Specific origins only
+                allow_methods=["GET", "POST", "OPTIONS"],  # ✅ SECURITY: Only required methods
+                allow_headers=["Authorization", "Content-Type"],  # ✅ SECURITY: Specific headers
+                allow_credentials=True,
+                max_age=Duration.minutes(10)
             )
         )
 

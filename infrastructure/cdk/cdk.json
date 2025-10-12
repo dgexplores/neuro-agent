@@ -14,6 +14,12 @@
     ]
   },
   "context": {
+    "bedrock_agent_id": "",
+    "jwt_secret_key": "",
+    "allowed_origins": "https://neuroagent.example.com",
+    "redis_enabled": "false",
+    "redis_host": "",
+
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [
