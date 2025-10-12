@@ -11,8 +11,8 @@ echo "⏰ 預計需要 10-15 分鐘完成"
 # 檢查必要工具
 echo "📋 檢查環境需求..."
 command -v node >/dev/null 2>&1 || { echo "❌ Node.js is required. 請安裝 Node.js 18+"; exit 1; }
-command -v python >/dev/null 2>&1 || { echo "❌ Python is required. 請安裝 Python 3.11+"; exit 1; }
-command -v aws >/dev/null 2>&1 || { echo "❌ AWS CLI is required. 請配置 AWS CLI"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "❌ Python is required. 請安裝 Python 3.11+"; exit 1; }
+command -v aws >/dev/null 2>&1 || { echo "⚠️  AWS CLI not found. AWS Bedrock MCP will be installed but requires AWS CLI configuration."; }
 
 # 創建 MCP 配置目錄
 echo "📁 創建 MCP 配置目錄..."
@@ -22,7 +22,9 @@ mkdir -p ./mcp-servers
 # 1. 安裝 GitHub MCP Server (最高優先級)
 echo "📦 安裝 GitHub MCP Server..."
 cd ./mcp-servers
-git clone https://github.com/shibdad/github-mcp-server.git github
+if [ ! -d "github" ]; then
+  git clone https://github.com/shibdad/github-mcp-server.git github
+fi
 cd github
 npm install
 chmod +x start.sh index.js
@@ -31,15 +33,21 @@ cd ..
 
 # 2. 安裝 AWS Bedrock MCP Server
 echo "📦 安裝 AWS Bedrock MCP Server..."
-git clone https://github.com/aws-samples/sample-bedrock-mcp.git aws-bedrock
+if [ ! -d "aws-bedrock" ]; then
+  git clone https://github.com/aws-samples/sample-bedrock-mcp.git aws-bedrock
+fi
 cd aws-bedrock
-pip install -r requirements.txt
+python3 -m venv venv
+./venv/bin/pip install uv
+./venv/bin/uv sync --all-groups
 echo "✅ AWS Bedrock MCP Server 安裝完成"
 cd ..
 
 # 3. 安裝 Filesystem MCP Server
 echo "📦 安裝 Filesystem MCP Server..."
-git clone https://github.com/modelcontextprotocol/servers.git mcp-servers-official
+if [ ! -d "mcp-servers-official" ]; then
+  git clone https://github.com/modelcontextprotocol/servers.git mcp-servers-official
+fi
 cd mcp-servers-official/src/filesystem
 npm install
 echo "✅ Filesystem MCP Server 安裝完成"
@@ -47,7 +55,9 @@ cd ../../../
 
 # 4. 安裝 Claude Context (語義搜索)
 echo "📦 安裝 Claude Context Server..."
-git clone https://github.com/zilliztech/claude-context.git claude-context
+if [ ! -d "claude-context" ]; then
+  git clone https://github.com/zilliztech/claude-context.git claude-context
+fi
 cd claude-context
 npm install
 echo "✅ Claude Context Server 安裝完成"
@@ -55,9 +65,12 @@ cd ..
 
 # 5. 安裝 Semgrep MCP (安全掃描)
 echo "📦 安裝 Semgrep MCP Server..."
-git clone https://github.com/semgrep/mcp.git semgrep-mcp
+if [ ! -d "semgrep-mcp" ]; then
+  git clone https://github.com/semgrep/mcp.git semgrep-mcp
+fi
 cd semgrep-mcp
-pip install -r requirements.txt
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
 echo "✅ Semgrep MCP Server 安裝完成"
 cd ..
 
@@ -89,7 +102,7 @@ cat > ~/.config/claude-desktop/claude_desktop_config.json << EOF
       }
     },
     "aws-bedrock": {
-      "command": "python",
+      "command": "$(pwd)/mcp-servers/aws-bedrock/venv/bin/python",
       "args": ["-m", "chainlit", "run", "$(pwd)/mcp-servers/aws-bedrock/app.py"],
       "env": {
         "AWS_REGION": "us-east-1",
@@ -98,7 +111,7 @@ cat > ~/.config/claude-desktop/claude_desktop_config.json << EOF
       }
     },
     "semgrep": {
-      "command": "python",
+      "command": "$(pwd)/mcp-servers/semgrep-mcp/venv/bin/python",
       "args": ["$(pwd)/mcp-servers/semgrep-mcp/server.py"],
       "env": {
         "SEMGREP_API_TOKEN": "your-semgrep-token-here"
