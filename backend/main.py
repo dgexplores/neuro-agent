@@ -180,6 +180,10 @@ async def get_case(
     except Exception as e:
         raise HTTPException(status_code=404, detail="Case not found")
 
+# Lambda handler for AWS API Gateway
+from mangum import Mangum
+handler = Mangum(app, lifespan="off")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

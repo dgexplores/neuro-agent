@@ -119,7 +119,7 @@ class NeuroAgentStack(Stack):
         api = apigw.LambdaRestApi(
             self, "NeuroAgentAPIGateway",
             handler=api_lambda,
-            proxy=False,
+            proxy=True,  # ✅ Enable proxy mode for all FastAPI routes
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=cors_origins,  # ✅ SECURITY: Specific origins only
                 allow_methods=["GET", "POST", "OPTIONS"],  # ✅ SECURITY: Only required methods
@@ -128,21 +128,6 @@ class NeuroAgentStack(Stack):
                 max_age=Duration.minutes(10)
             )
         )
-
-        # API routes
-        api_v1 = api.root.add_resource("api").add_resource("v1")
-
-        diagnosis_resource = api_v1.add_resource("diagnosis")
-        diagnosis_resource.add_method("POST")
-
-        upload_resource = api_v1.add_resource("upload-image")
-        upload_resource.add_method("POST")
-
-        cases_resource = api_v1.add_resource("cases")
-        cases_resource.add_method("GET")
-
-        case_resource = cases_resource.add_resource("{case_id}")
-        case_resource.add_method("GET")
 
         # Outputs
         cdk.CfnOutput(

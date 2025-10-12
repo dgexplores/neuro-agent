@@ -1,0 +1,374 @@
+[
+  {
+    "case_id": "demo-001-chronic-migraine",
+    "case_name": "Chronic Migraine - 45-year-old Female",
+    "patient_info": {
+      "age": 45,
+      "gender": "female",
+      "medical_history": [
+        "Ependymoma (brain tumor removed at age 30)",
+        "Chronic migraine since age 22",
+        "Weak neck muscles post-brain surgery"
+      ],
+      "current_medications": [
+        "Anti-CGRP monoclonal antibodies (trial)"
+      ],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "throbbing headache",
+        "severity": "severe",
+        "duration_days": 365,
+        "description": "One-sided, alternating, throbbing headaches localized on forehead, sometimes radiating to neck. Average 13 headache days per month, lasting 12 hours each, severity 9/10"
+      },
+      {
+        "name": "photophobia",
+        "severity": "moderate",
+        "duration_days": 365,
+        "description": "Light sensitivity during migraine episodes"
+      },
+      {
+        "name": "phonophobia",
+        "severity": "moderate",
+        "duration_days": 365,
+        "description": "Sound sensitivity during migraine episodes"
+      },
+      {
+        "name": "nausea",
+        "severity": "moderate",
+        "duration_days": 365,
+        "description": "Nausea present, rarely vomiting"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 120,
+      "bp_diastolic": 69,
+      "heart_rate": 51,
+      "temperature": 37.0
+    },
+    "chief_complaint": "Chronic debilitating headaches occurring 13 days per month with severe pain (9/10)",
+    "history_present_illness": "Patient presents with history of chronic migraine since age 22, now experiencing 13 headache days per month. Each episode lasts approximately 12 hours with throbbing, one-sided pain rating 9/10. Current anti-CGRP therapy trial ongoing.",
+    "expected_diagnosis": "Chronic Migraine without Aura",
+    "source": "PMC10198612 - A case report of a chronic migraine patient treated with three different anti-CGRP monoclonal antibodies (2023)"
+  },
+  {
+    "case_id": "demo-002-hemiplegic-migraine",
+    "case_name": "Type 3 Hemiplegic Migraine - 57-year-old Female",
+    "patient_info": {
+      "age": 57,
+      "gender": "female",
+      "medical_history": [
+        "Recurrent neurological episodes for 6 years (onset age 51)",
+        "Family history of migraine (grandmother, aunt, cousin)",
+        "Initially misdiagnosed as stroke"
+      ],
+      "current_medications": [
+        "Prophylactic migraine medications"
+      ],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "visual disturbances",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Flickering in both eyes, recurring episodes"
+      },
+      {
+        "name": "sensory disturbances",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Unilateral numbness of fingers, left face hypoesthesia"
+      },
+      {
+        "name": "speech disturbances",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Unable to comprehend or produce words during episodes"
+      },
+      {
+        "name": "severe headache",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Severe one-sided headache lasting 3-7 days per episode"
+      },
+      {
+        "name": "hemiparesis",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Weakness on one side of body"
+      },
+      {
+        "name": "altered consciousness",
+        "severity": "severe",
+        "duration_days": 2190,
+        "description": "Loss of consciousness during episodes"
+      },
+      {
+        "name": "nausea and vomiting",
+        "severity": "moderate",
+        "duration_days": 2190,
+        "description": "Gastrointestinal symptoms during attacks"
+      },
+      {
+        "name": "ataxic gait",
+        "severity": "moderate",
+        "duration_days": 2190,
+        "description": "Instability and difficulty walking"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 120,
+      "bp_diastolic": 80,
+      "heart_rate": 75,
+      "temperature": 38.0
+    },
+    "chief_complaint": "Recurrent episodes of visual disturbances, speech problems, weakness, and severe headaches lasting up to a week, occurring 3 times per month",
+    "history_present_illness": "57-year-old female with 6-year history of recurrent neurological episodes. Episodes include visual flickering, inability to speak or comprehend words, unilateral numbness, hemiparesis, and severe headaches lasting 3-7 days. Occurs approximately 3 times monthly. Strong family history of migraine. Previous workup for stroke was negative.",
+    "expected_diagnosis": "Type 3 Hemiplegic Migraine (SCN1A gene mutation T1174S)",
+    "source": "Frontiers in Neurology - Late onset type 3 hemiplegic migraine with permanent neurologic sequelae after attacks (2024)"
+  },
+  {
+    "case_id": "demo-003-acute-stroke",
+    "case_name": "Acute Ischemic Stroke - 66-year-old Male",
+    "patient_info": {
+      "age": 66,
+      "gender": "male",
+      "medical_history": [
+        "Chronic obstructive pulmonary disease (COPD)",
+        "Atrial fibrillation",
+        "Previous ischemic stroke",
+        "COVID-19 infection (concurrent)"
+      ],
+      "current_medications": [
+        "COPD medications",
+        "Anticoagulants for atrial fibrillation"
+      ],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "left-sided weakness",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "Left upper limb power 2/5, bilateral lower limb power 2/5, right upper limb power 5/5"
+      },
+      {
+        "name": "facial droop",
+        "severity": "mild",
+        "duration_days": 1,
+        "description": "Mild left facial droop"
+      },
+      {
+        "name": "dysarthria",
+        "severity": "moderate",
+        "duration_days": 1,
+        "description": "Deterioration in speech pattern, difficulty articulating words"
+      },
+      {
+        "name": "respiratory distress",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "Oxygen saturation 88-92%, requiring 15L oxygen supplementation"
+      },
+      {
+        "name": "altered consciousness",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "Glasgow Coma Scale declined from 15 to 5 within hours"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 144,
+      "bp_diastolic": 76,
+      "heart_rate": 92,
+      "temperature": 37.0
+    },
+    "chief_complaint": "Acute onset of left-sided weakness, facial droop, and difficulty speaking",
+    "history_present_illness": "66-year-old male with history of COPD, atrial fibrillation, and previous stroke presents with sudden onset left-sided weakness and dysarthria. Patient currently diagnosed with COVID-19. Symptoms developed acutely, with progressive deterioration in consciousness (GCS 15→5). Exam shows left facial droop, left UE weakness (2/5), bilateral LE weakness (2/5), and respiratory distress.",
+    "expected_diagnosis": "Right Frontal Cerebral Infarct (Acute Ischemic Stroke)",
+    "source": "PMC7447108 - Clinical course of a 66-year-old man with an acute ischaemic stroke in the setting of a COVID-19 infection (2020)"
+  },
+  {
+    "case_id": "demo-004-multiple-sclerosis",
+    "case_name": "Multiple Sclerosis - 35-year-old Female",
+    "patient_info": {
+      "age": 35,
+      "gender": "female",
+      "medical_history": [
+        "Neurologic changes for many years",
+        "Progressive symptoms over multiple years"
+      ],
+      "current_medications": [
+        "Disease-modifying therapy (DMT) for MS"
+      ],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "heat intolerance",
+        "severity": "moderate",
+        "duration_days": 1825,
+        "description": "Symptoms worsen with heat exposure"
+      },
+      {
+        "name": "stumbling gait",
+        "severity": "moderate",
+        "duration_days": 1825,
+        "description": "Tendency to fall, tandem gait mildly unstable"
+      },
+      {
+        "name": "visual disturbances",
+        "severity": "moderate",
+        "duration_days": 1825,
+        "description": "Fluctuating visual acuity"
+      },
+      {
+        "name": "tremors",
+        "severity": "mild",
+        "duration_days": 1825,
+        "description": "Intermittent tremors in extremities"
+      },
+      {
+        "name": "extreme fatigue",
+        "severity": "severe",
+        "duration_days": 1825,
+        "description": "Persistent exhaustion affecting daily activities"
+      },
+      {
+        "name": "hemisensory deficit",
+        "severity": "moderate",
+        "duration_days": 60,
+        "description": "Right-sided numbness and paresthesia"
+      },
+      {
+        "name": "weakness",
+        "severity": "moderate",
+        "duration_days": 60,
+        "description": "Right-sided weakness, mild paraparesis"
+      },
+      {
+        "name": "bladder dysfunction",
+        "severity": "moderate",
+        "duration_days": 365,
+        "description": "Nocturia and occasional incontinence"
+      },
+      {
+        "name": "cognitive impairment",
+        "severity": "mild",
+        "duration_days": 365,
+        "description": "Impaired short-term memory, irritability"
+      },
+      {
+        "name": "decreased hand dexterity",
+        "severity": "moderate",
+        "duration_days": 365,
+        "description": "Difficulty with fine motor tasks"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 118,
+      "bp_diastolic": 75,
+      "heart_rate": 72,
+      "temperature": 37.0
+    },
+    "chief_complaint": "Progressive neurological symptoms including gait instability, visual changes, extreme fatigue, and recent worsening of right-sided weakness",
+    "history_present_illness": "35-year-old female with long-standing neurological symptoms presents with progressive gait instability, visual disturbances, and severe fatigue over approximately 5 years. Recent acute worsening with right-sided hemisensory deficits and weakness (2 months duration). Additional symptoms include heat intolerance, bladder dysfunction, cognitive changes, and decreased hand dexterity. Currently on disease-modifying therapy.",
+    "expected_diagnosis": "Multiple Sclerosis (Relapsing-Remitting Type)",
+    "source": "University of Utah Medical Library - Multiple Sclerosis: Clinical Presentation Case 1"
+  },
+  {
+    "case_id": "demo-005-epilepsy",
+    "case_name": "Generalized Tonic-Clonic Epilepsy - 25-year-old Female",
+    "patient_info": {
+      "age": 25,
+      "gender": "female",
+      "medical_history": [
+        "Acute myelogenous leukemia (AML) at 18 months, treated with radiation and chemotherapy",
+        "Basal cell carcinoma surgically excised (2006)"
+      ],
+      "current_medications": [],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "generalized tonic-clonic seizures",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "Three seizures within hours - generalized body stiffening followed by left upper extremity elevation, left lower extremity straightening, rightward head turn, lasting ~3 minutes each"
+      },
+      {
+        "name": "urinary incontinence",
+        "severity": "moderate",
+        "duration_days": 1,
+        "description": "Loss of bladder control during seizure"
+      },
+      {
+        "name": "oxygen desaturation",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "O2 saturation dropped to 67% during seizure"
+      },
+      {
+        "name": "post-ictal confusion",
+        "severity": "moderate",
+        "duration_days": 1,
+        "description": "Confusion following seizure episodes"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 108,
+      "bp_diastolic": 61,
+      "heart_rate": 112,
+      "temperature": 36.4
+    },
+    "chief_complaint": "Multiple generalized tonic-clonic seizures with first episode occurring earlier in the day, no prior seizure history",
+    "history_present_illness": "25-year-old female with history of childhood AML (treated with radiation and chemotherapy) presents with new-onset generalized tonic-clonic seizures. Patient experienced three seizures within several hours, each lasting approximately 3 minutes. Seizures characterized by generalized body stiffening, left arm elevation, left leg straightening, rightward head turning, urinary incontinence, and oxygen desaturation to 67%. Post-ictal confusion noted. No prior seizure history.",
+    "expected_diagnosis": "New-Onset Generalized Tonic-Clonic Seizures secondary to Intracranial Meningioma",
+    "source": "PMC2664602 - 25-Year-Old Woman With New-Onset Seizures (2009)"
+  },
+  {
+    "case_id": "demo-006-parkinsons",
+    "case_name": "Early Parkinson's Disease - 70-year-old Male",
+    "patient_info": {
+      "age": 70,
+      "gender": "male",
+      "medical_history": [
+        "No significant prior neurological conditions"
+      ],
+      "current_medications": [],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "resting tremor",
+        "severity": "mild",
+        "duration_days": 365,
+        "description": "Intermittent resting tremor in left hand for 1 year"
+      },
+      {
+        "name": "bradykinesia",
+        "severity": "mild",
+        "duration_days": 365,
+        "description": "Mild asymmetrical slowness of movement"
+      },
+      {
+        "name": "rigidity",
+        "severity": "mild",
+        "duration_days": 365,
+        "description": "Mild asymmetrical cogwheel rigidity"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 128,
+      "bp_diastolic": 82,
+      "heart_rate": 68,
+      "temperature": 37.0
+    },
+    "chief_complaint": "One year of intermittent tremor in left hand that occurs primarily at rest",
+    "history_present_illness": "70-year-old male presents with 1-year history of intermittent resting tremor in left hand. Tremor is more noticeable when patient is relaxed and decreases with voluntary movement. Patient also reports mild slowing of movement and occasional stiffness. Neurological examination reveals mild asymmetrical bradykinesia and cogwheel rigidity. No significant prior neurological history.",
+    "expected_diagnosis": "Early-Stage Parkinson's Disease",
+    "source": "PMC3002647 - Pharmacotherapy in Parkinson's disease: case studies (2010)"
+  }
+]
