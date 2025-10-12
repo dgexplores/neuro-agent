@@ -1,0 +1,24 @@
+# Exclude files from CDK asset bundling
+node_modules/
+.git/
+*.md
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.env
+.DS_Store
+*.log
+frontend/
+infrastructure/
+tests/
+docs/
+data/
+scripts/
+.github/
+*.spec.ts
+locustfile.py

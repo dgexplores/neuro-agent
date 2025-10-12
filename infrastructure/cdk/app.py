@@ -9,8 +9,10 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_iam as iam,
     Duration,
-    RemovalPolicy
+    RemovalPolicy,
+    BundlingOptions
 )
+import os
 
 class NeuroAgentStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -73,8 +75,16 @@ class NeuroAgentStack(Stack):
         api_lambda = _lambda.Function(
             self, "NeuroAgentAPI",
             runtime=_lambda.Runtime.PYTHON_3_11,
-            handler="main.handler",
-            code=_lambda.Code.from_asset("../backend"),
+            handler="backend.main.handler",
+            code=_lambda.Code.from_asset(
+                "../../",
+                exclude=[
+                    "*.md", ".git", ".github", "node_modules", "frontend",
+                    "infrastructure", "tests", "docs", "data", "scripts",
+                    "*.pyc", "__pycache__", ".pytest_cache", ".env",
+                    "*.log", "*.spec.ts", "locustfile.py", ".venv", "venv"
+                ]
+            ),
             timeout=Duration.minutes(5),
             memory_size=1024,
             role=lambda_role,

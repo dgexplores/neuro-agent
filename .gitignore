@@ -26,6 +26,9 @@ build/
 # AWS
 .aws/
 *.pem
+cdk.out/
+cdk-bootstrap-out/
+.cdk.staging/
 
 # Data
 *.db
