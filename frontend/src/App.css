@@ -1,0 +1,35 @@
+.App {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.diagnosis-form {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 24px;
+}
+
+.results-panel {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.confidence-bar {
+  margin: 8px 0;
+}
+
+.diagnosis-card {
+  margin-bottom: 16px;
+  border-left: 4px solid #1976d2;
+}

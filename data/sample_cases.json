@@ -1,0 +1,68 @@
+[
+  {
+    "case_id": "sample-001",
+    "patient_info": {
+      "age": 45,
+      "gender": "female",
+      "medical_history": ["hypertension", "diabetes"],
+      "current_medications": ["metformin", "lisinopril"],
+      "allergies": ["penicillin"]
+    },
+    "symptoms": [
+      {
+        "name": "headache",
+        "severity": "severe",
+        "duration_days": 3,
+        "description": "Throbbing headache on right side"
+      },
+      {
+        "name": "nausea",
+        "severity": "moderate", 
+        "duration_days": 2,
+        "description": "Feeling sick, especially in morning"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 150,
+      "bp_diastolic": 95,
+      "heart_rate": 78,
+      "temperature": 37.2
+    },
+    "chief_complaint": "Severe headache for 3 days",
+    "history_present_illness": "Patient reports sudden onset of severe right-sided headache 3 days ago, associated with nausea and photophobia",
+    "expected_diagnosis": "Migraine with possible medication overuse component"
+  },
+  {
+    "case_id": "sample-002", 
+    "patient_info": {
+      "age": 67,
+      "gender": "male",
+      "medical_history": ["atrial_fibrillation", "hypertension"],
+      "current_medications": ["warfarin", "metoprolol"],
+      "allergies": []
+    },
+    "symptoms": [
+      {
+        "name": "weakness_left_arm",
+        "severity": "severe",
+        "duration_days": 1,
+        "description": "Sudden onset left arm weakness"
+      },
+      {
+        "name": "speech_difficulty",
+        "severity": "moderate",
+        "duration_days": 1, 
+        "description": "Slurred speech, difficulty finding words"
+      }
+    ],
+    "vital_signs": {
+      "bp_systolic": 160,
+      "bp_diastolic": 100,
+      "heart_rate": 95,
+      "temperature": 36.8
+    },
+    "chief_complaint": "Left arm weakness and speech problems",
+    "history_present_illness": "Patient developed sudden left arm weakness and difficulty speaking this morning while having breakfast",
+    "expected_diagnosis": "Acute ischemic stroke"
+  }
+]
