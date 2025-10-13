@@ -17,7 +17,6 @@ import { Search, Assignment } from '@mui/icons-material';
 const CaseHistoryPage = () => {
   const [cases, setCases] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
 
   // Mock data for demonstration
   useEffect(() => {

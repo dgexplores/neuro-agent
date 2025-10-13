@@ -11,12 +11,11 @@ import {
   ListItemIcon,
   ListItemText
 } from '@mui/material';
-import { 
+import {
   Psychology,
-  LocalHospital, 
+  LocalHospital,
   Analytics,
   Security,
-  Speed,
   CheckCircle
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
