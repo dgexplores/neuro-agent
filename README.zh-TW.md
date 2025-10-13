@@ -1,62 +1,62 @@
-#  NeuroAgent - AI 
+# NeuroAgent - AI 驅動的神經疾病診療輔助系統
 
-[![Tests](https://img.shields.io/badge/tests-94%2F94%20passing-brightgreen)](./FINAL_ACCEPTANCE_REPORT.md)
-[![Deployment](https://img.shields.io/badge/AWS-deployed-orange)](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
-[![Security](https://img.shields.io/badge/security-0%20high%20vulnerabilities-brightgreen)](./FINAL_ACCEPTANCE_REPORT.md)
+[![測試狀態](https://img.shields.io/badge/tests-94%2F94%20passing-brightgreen)](./docs/FINAL_ACCEPTANCE_REPORT.md)
+[![部署狀態](https://img.shields.io/badge/deployment-AWS%20Live-brightgreen)](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
+[![安全性](https://img.shields.io/badge/security-0%20high%20vulnerabilities-brightgreen)](./docs/FINAL_ACCEPTANCE_REPORT.md)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![AWS](https://img.shields.io/badge/AWS-Bedrock%20%7C%20Lambda%20%7C%20CDK-orange)](./infrastructure/cdk/)
-[![Hackathon](https://img.shields.io/badge/AWS%20AI%20Agent-Hackathon%202025-success)](./HACKATHON_SUBMISSION.md)
+[![授權](https://img.shields.io/badge/license-Educational-blue)](./LICENSE)
 
->  AI  AWS Bedrock  AWS AI Agent Global Hackathon 2025 
+> 以 AWS Bedrock 為基礎打造的企業級 AI 神經疾病診療助理，專為 AWS AI Agent Global Hackathon 2025 開發。
 
-NeuroAgent  AWS AI Agent  Amazon Bedrock  AI 
+NeuroAgent 是一套企業級的神經疾病診療輔助系統，採用 AWS AI Agent 架構，整合 Amazon Bedrock 的多模態 AI 能力，為醫療專業人員提供智慧診斷建議、藥物交互作用檢查及醫學影像分析服務。
 
-** **:   AWS | ** **: 100% (94/94) | ** **: 0 
+**專案狀態**：正式上線（完成度 100%） | **測試涵蓋率**：100% | **資安問題**：0 個高風險漏洞
 
-** Live Demo**: 
-
----
-
-##  
-
-###  AI 
-- ****: 
-- ****:  3  ( 85%)
-- ****: 
-- ****: 14 WarfarinLevodopa 
-
-###  
-- **HIPAA **: 
-- ****:  AI 
-- ****: 
-- **90  TTL**: DynamoDB 
-
-###  
-- **Redis **: 60-70% p95  < 2s
-- ****: AWS Lambda + API Gateway ( 100+ )
-- ****: Locust  100 
-- ****:  $40-50 65%
-
-###  
-- ****: 16 
-- **JWT **: 7 
-- **CORS **:  `*` 
-- ****: 
+**線上展示網站**：https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
 
 ---
 
-##  
+## 核心功能
 
-###   (2025-10-13)
+### AI 智慧診斷
+- **多模態分析**：整合病患症狀、病史、生命徵象及影像資料
+- **鑑別診斷**：提供前 3 名鑑別診斷及信心分數（準確度達 85%）
+- **實證醫學建議**：基於臨床指引提供治療建議
+- **藥物交互作用檢查**：檢測 14 種常見神經科用藥的交互作用（包含 Warfarin、Levodopa 等）
 
- **AWS **
-- Lambda Python 3.11, 1GB RAM, Mangum 
-- API Gateway 
-- ElastiCache Redis neuroagent-redis.xjuedn.0001.use1.cache.amazonaws.com
-- CloudWatch 3 
-- 6  2009-2024
+### 醫療法規遵循
+- **符合 HIPAA 精神**：病患資料匿名化、傳輸加密
+- **醫療免責聲明**：所有 AI 輸出皆附帶適當的醫療免責聲明
+- **完整稽核軌跡**：完整的病例追蹤記錄
+- **90 天資料 TTL**：自動資料到期機制，符合 DynamoDB 最佳實務
 
-### 
+### 效能與擴充性
+- **Redis 快取機制**：快取命中率 60-70%，p95 延遲時間 < 2 秒
+- **藍綠部署**：AWS Lambda + API Gateway，支援零停機部署（可擴充至 100+ 併發使用者）
+- **壓力測試**：Locust 壓測通過 100 併發使用者場景
+- **成本優化**：預估每月 $40-50 美元（啟用快取後可節省 65% Bedrock 費用）
+
+### 資安強化
+- **輸入消毒**：偵測 16 種危險模式（防範提示注入攻擊）
+- **JWT 驗證機制**：7 層安全驗證，搭配演算法白名單
+- **CORS 防護**：特定來源白名單機制（不使用萬用字元 `*`）
+- **機敏資訊管理**：不在 Git 儲存庫中存放任何機敏資訊
+
+---
+
+## 專案現況
+
+### 線上部署資源（已於 2025-10-13 完成部署）
+
+現已**完整部署於 AWS**：
+- Lambda 函式：Python 3.11、1GB RAM、Mangum ASGI 轉接器
+- API Gateway：REST API 架構
+- ElastiCache Redis：neuroagent-redis.xjuedn.0001.use1.cache.amazonaws.com
+- CloudWatch：設定 3 組警報
+- 展示資料：6 組真實病例（來源：2009-2024 年醫學文獻）
+
+### 測試結果
 ```
 ============================= test session starts ==============================
 collected 94 items
@@ -67,56 +67,56 @@ tests/integration/ .................................................. [100%]
 ======================== 94 passed, 1 warning in 0.67s =========================
 ```
 
-- ****: 38/38 passing (100%)
-- ****: 56/56 passing (100%)
-- ****: 94/94 passing (100%) 
+- **單元測試**：38/38 通過（100%）
+- **整合測試**：56/56 通過（100%）
+- **總計**：94/94 通過（100%）
 
-### 
-| Component | Status | Details |
-|-----------|--------|---------|
-| AI Diagnosis Engine |  Deployed | Bedrock Claude 3 Sonnet integrated |
-| Lambda Function |  Running | 1024MB, 5min timeout, Mangum handler |
-| API Gateway |  Running | Proxy mode, CORS configured |
-| DynamoDB |  Active | neuroagent-cases (On-Demand) |
-| S3 Bucket |  Active | neuroagent-images-100939136870-us-east-1 |
-| ElastiCache Redis |  Available | cache.t3.micro, 60-70% hit rate |
-| CloudWatch Alarms |  Configured | Errors, Duration, 5xx monitoring |
-| Security |  Hardened | JWT, Input sanitization, CORS |
-| Demo Data |  Generated | 6 realistic case studies |
-| Documentation |  Complete | 10,000+ lines across 5 guides |
+### 完成度狀態
+| 元件 | 狀態 | 詳細資訊 |
+|------|------|---------|
+| AI 診斷引擎 | 已部署 | 整合 Bedrock Claude 3 Sonnet |
+| Lambda 函式 | 運行中 | 1024MB、5 分鐘逾時、Mangum 處理器 |
+| API Gateway | 運行中 | 代理模式、已設定 CORS |
+| DynamoDB | 已啟用 | neuroagent-cases（隨選模式） |
+| S3 儲存貯體 | 已啟用 | neuroagent-images-100939136870-us-east-1 |
+| ElastiCache Redis | 可用 | cache.t3.micro、快取命中率 60-70% |
+| CloudWatch 警報 | 已設定 | 錯誤、執行時間、5xx 狀態碼監控 |
+| 資安防護 | 已強化 | JWT、輸入消毒、CORS |
+| 展示資料 | 已產生 | 6 組真實個案研究 |
+| 說明文件 | 已完成 | 超過 10,000 行，涵蓋 5 份指南 |
 
 ---
 
-##  
+## 快速開始
 
-###   API
+### 線上 API 體驗
 
-**API **: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
+**API 端點**：https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
 
-****:
+**健康檢查**：
 ```bash
 curl https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/health
 ```
 
-**API Swagger UI**:
+**API Swagger UI 文件**：
 ```
 https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/docs
 ```
 
-###   Demo 
+### 線上 Demo 病例
 
- 6 :
+提供 6 組真實案例：
 
-1. **** - 45 13 /
-2. **** - 57 
-3. **** - 66  COVID-19
-4. **** - 35 
-5. **** - 25 
-6. **** - 70 
+1. **慢性偏頭痛** - 45 歲女性，每月頭痛 13 天，嚴重度 9/10
+2. **偏癱型偏頭痛** - 57 歲女性，單側癱瘓併頭痛
+3. **急性缺血性中風** - 66 歲男性，COVID-19 後中風
+4. **多發性硬化症** - 35 歲女性，視力喪失及肌肉無力
+5. **全身性癲癇** - 25 歲女性，反覆抽搐發作
+6. **早期帕金森氏症** - 70 歲男性，靜止性顫抖
 
-: [data/demo_cases.json](./data/demo_cases.json)
+資料來源：[data/demo_cases.json](./data/demo_cases.json)
 
-###   JWT Token
+### 產生 JWT Token
 
 ```python
 import jwt
@@ -134,7 +134,7 @@ token = jwt.encode(payload, secret, algorithm='HS256')
 print(f"Bearer {token}")
 ```
 
-###   API
+### 測試診斷 API
 
 ```bash
 curl -X POST https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/api/v1/diagnosis \
@@ -168,172 +168,171 @@ curl -X POST https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/api/v1/
 
 ---
 
-##  
+## 本地開發環境
 
-### 
+### 系統需求
 
-- **Python**: 3.11+
-- **Node.js**: 18+ ( CDK)
-- **AWS CLI**: 
-- **Docker**: ()
+- **Python**：3.11 以上版本
+- **Node.js**：18 以上版本（用於 CDK 部署）
+- **AWS CLI**：已設定管理員權限
+- **Docker**：非必要（用於本地開發）
 
-### 1. 
+### 1. 複製專案
 ```bash
 git clone https://github.com/thc1006/neuro-agent.git
 cd neuro-agent
 ```
 
-### 2.  Python 
+### 2. 設定 Python 虛擬環境
 ```bash
-# 
+# 建立虛擬環境
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
-#  venv\Scripts\activate  # Windows
+# 或 venv\Scripts\activate  # Windows
 
-# 
+# 安裝相依套件
 pip install -r requirements.txt
 ```
 
-### 3. 
+### 3. 設定環境變數
 ```bash
-# 
+# 複製範本
 cp .env.example .env
 
-#  .env 
+# 編輯 .env 檔案，設定以下變數：
 # AWS_REGION=us-east-1
 # BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
 # JWT_SECRET_KEY=your-secret-key-min-32-chars
 # ALLOWED_ORIGINS=http://localhost:3000
-# REDIS_ENABLED=false  #  false
+# REDIS_ENABLED=false  # 本地開發建議設為 false
 ```
 
-### 4.  API
+### 4. 啟動後端 API
 ```bash
 cd backend
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# API : http://localhost:8000/docs
-# Health Check: http://localhost:8000/health
+# API 文件：http://localhost:8000/docs
+# 健康檢查：http://localhost:8000/health
 ```
 
-### 5. 
+### 5. 啟動前端介面
 ```bash
 cd frontend
 npm install
 npm start
 
-# : http://localhost:3000
+# 前端應用程式：http://localhost:3000
 ```
 
-### 6. 
+### 6. 執行測試
 ```bash
-# 
+# 執行所有測試
 pytest tests/ -v
 
-# 
+# 載入測試（選用）
 cd tests/load
 locust -f locustfile.py --host=http://localhost:8000
 ```
 
 ---
 
-##  
+## 系統架構
 
 ```
 
-                        Frontend (React 18)                      
-                  Material-UI • Axios • React Router             
-                     http://localhost:3000                       
+                        前端介面（React 18）
+                  Material-UI • Axios • React Router
+                     http://localhost:3000
 
                                 HTTPS + JWT
 
-              AWS API Gateway (REST API)                         
-  https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/  
-                                                                  
-  • POST /api/v1/diagnosis      - AI                         
-  • POST /api/v1/upload-image   -                       
-  • POST /api/v1/drug-interactions -                 
-  • GET  /api/v1/cases          -                        
-  • GET  /api/v1/cases/{id}     -                       
+              AWS API Gateway（REST API）
+  https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
 
-                               
+  • POST /api/v1/diagnosis      - AI 智慧診斷
+  • POST /api/v1/upload-image   - 醫學影像上傳
+  • POST /api/v1/drug-interactions - 藥物交互作用檢查
+  • GET  /api/v1/cases          - 取得病例清單
+  • GET  /api/v1/cases/{id}     - 取得特定病例
 
-                 AWS Lambda (Serverless Compute)                 
-              NeuroAgentStack-NeuroAgentAPI-*                    
-                Python 3.11 • 1024MB • 5min timeout             
-                      Mangum ASGI Adapter                        
-                                                                  
-    
-                FastAPI Application                           
-          
-      NeuroAgent       BedrockService     Security    
-      (Orchestrator) (AI Integration)    (JWT)       
-                       • InvokeAgent      • Verify    
-     • Analyze case    • InvokeModel      • Sanitize  
-     • Check drugs     • Fallback                     
-          
-                                                            
-        
-          Medical Knowledge Base                           
-      • 14 drug interactions                               
-      • Treatment protocols                                
-      • Risk stratification                                
-        
-    
-                                                                  
-  Environment Variables: BEDROCK_MODEL_ID, JWT_SECRET_KEY,      
-  REDIS_HOST, DYNAMODB_TABLE_NAME, S3_BUCKET_NAME, etc.        
 
-                                          
-      
- DynamoDB      Amazon Bedrock     ElastiCache         S3     
-                                    (Redis)                  
- neuroagent-   Claude 3 Sonnet                    Medical    
- cases                            neuroagent-     Images     
-               • InvokeModel      redis                      
- On-Demand     • Streaming                        neuroagent-
- TTL: 90d                         cache.t3.       images-*   
-               $0.003/1K input    micro                      
-      
-       
+ AWS Lambda（無伺服器運算）
+              NeuroAgentStack-NeuroAgentAPI-*
+                Python 3.11 • 1024MB • 5 分鐘逾時
+                      Mangum ASGI 轉接器
 
-            CloudWatch Logs + Alarms                            
-  • Lambda Errors (>5 in 5min) → SNS notification              
-  • Lambda Duration p95 (>2000ms) → SNS notification           
-  • API Gateway 5xx Errors (>10 in 5min) → SNS notification    
+
+                FastAPI 應用程式
+
+      NeuroAgent       BedrockService     Security
+      (協調器)       (AI 整合)           (JWT)
+                       • InvokeAgent      • Verify
+     • Analyze case    • InvokeModel      • Sanitize
+     • Check drugs     • Fallback
+
+
+
+          醫學知識庫
+      • 14 種藥物交互作用
+      • 治療方案建議
+      • 風險分層評估
+
+
+
+  環境變數：BEDROCK_MODEL_ID、JWT_SECRET_KEY、
+  REDIS_HOST、DYNAMODB_TABLE_NAME、S3_BUCKET_NAME 等
+
+
+
+ DynamoDB      Amazon Bedrock     ElastiCache         S3
+                                    (Redis)
+ neuroagent-   Claude 3 Sonnet                    醫學
+ cases                            neuroagent-     影像
+               • InvokeModel      redis
+ 隨選模式      • 串流回應                         neuroagent-
+ TTL: 90 天                        cache.t3.       images-*
+               $0.003/1K input    micro
+
+
+
+            CloudWatch 日誌 + 警報
+  • Lambda 錯誤（5 分鐘內 >5 次）→ SNS 通知
+  • Lambda 執行時間 p95（>2000 毫秒）→ SNS 通知
+  • API Gateway 5xx 錯誤（5 分鐘內 >10 次）→ SNS 通知
 
 ```
 
-### 
+### 技術堆疊
 
-** AI**:
-- AWS Lambda, API Gateway, DynamoDB, S3, ElastiCache, CloudWatch, IAM, CDK
-- Amazon Bedrock (Claude 3 Sonnet: anthropic.claude-3-sonnet-20240229-v1:0)
+**後端 AI 引擎**：
+- AWS Lambda、API Gateway、DynamoDB、S3、ElastiCache、CloudWatch、IAM、CDK
+- Amazon Bedrock（Claude 3 Sonnet：anthropic.claude-3-sonnet-20240229-v1:0）
 
-****:
-- Python 3.11, FastAPI, Pydantic, Mangum, Boto3, python-jose (JWT), Redis
+**應用程式框架**：
+- Python 3.11、FastAPI、Pydantic、Mangum、Boto3、python-jose（JWT）、Redis
 
-****:
-- React 18, Material-UI (MUI), Axios, React Router
+**前端介面**：
+- React 18、Material-UI（MUI）、Axios、React Router
 
-****:
-- pytest (94/94 passing), pytest-asyncio, Locust (load testing)
+**測試工具**：
+- pytest（94/94 通過）、pytest-asyncio、Locust（載入測試）
 
-****:
-- AWS CDK (Python), CloudFormation
+**基礎設施程式碼**：
+- AWS CDK（Python）、CloudFormation
 
 ---
 
-##  API 
+## API 文件
 
-### 
+### 主要端點
 
-#### 1. 
+#### 1. 健康檢查
 ```http
 GET /health
 ```
 
-****:
+**回應範例**：
 ```json
 {
   "status": "healthy",
@@ -341,16 +340,16 @@ GET /health
 }
 ```
 
-#### 2.  JWT
+#### 2. 神經疾病診斷（需要 JWT 驗證）
 ```http
 POST /api/v1/diagnosis
 Authorization: Bearer <JWT_TOKEN>
 Content-Type: application/json
 ```
 
-****:  [data/demo_cases.json](./data/demo_cases.json)
+**請求範例**：參閱 [data/demo_cases.json](./data/demo_cases.json)
 
-****:
+**回應範例**：
 ```json
 {
   "case_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -377,7 +376,7 @@ Content-Type: application/json
 }
 ```
 
-#### 3. 
+#### 3. 藥物交互作用檢查
 ```http
 POST /api/v1/drug-interactions
 Authorization: Bearer <JWT_TOKEN>
@@ -388,7 +387,7 @@ Content-Type: application/json
 }
 ```
 
-****:
+**回應範例**：
 ```json
 {
   "medication_count": 3,
@@ -414,32 +413,15 @@ Content-Type: application/json
 
 ---
 
-##  AWS 
+## 部署至 AWS
 
-### 
+### 完整部署指南
 
- ** AWS us-east-1 **
+詳細的 AWS 部署說明請參閱：
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - 完整部署指南（超過 5000 行）
+- **[DEPLOYMENT_STATUS_REPORT.md](./DEPLOYMENT_STATUS_REPORT.md)** - 目前部署狀態報告
 
-| AWS  |  |  |
-|---------|------|------|
-| Lambda |  Running | NeuroAgentStack-NeuroAgentAPI-dffwIyfopqTk |
-| API Gateway |  Running | 1w80v6fnw1 (REST API) |
-| DynamoDB |  Active | neuroagent-cases (On-Demand) |
-| S3 |  Active | neuroagent-images-100939136870-us-east-1 |
-| ElastiCache |  Available | neuroagent-redis (cache.t3.micro) |
-| CloudWatch |  Monitoring | 3 alarms configured |
-| IAM Roles |  Configured | Lambda execution role with Bedrock, DynamoDB, S3 permissions |
-
-**CloudFormation Stack**: NeuroAgentStack (UPDATE_COMPLETE)
-****: 39 
-
-### 
-
-:
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - 5000+ 
-- **[DEPLOYMENT_STATUS_REPORT.md](./DEPLOYMENT_STATUS_REPORT.md)** - 
-
-#### 1.  AWS CLI
+#### 1. 設定 AWS CLI
 ```bash
 aws configure
 # AWS Access Key ID: YOUR_ACCESS_KEY
@@ -447,7 +429,7 @@ aws configure
 # Default region name: us-east-1
 ```
 
-#### 2. Bootstrap CDK ()
+#### 2. Bootstrap CDK（首次部署時執行）
 ```bash
 cd infrastructure/cdk-clean
 npm install -g aws-cdk
@@ -455,43 +437,43 @@ pip install -r requirements.txt
 cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
 ```
 
-#### 3. 
+#### 3. 部署基礎設施
 ```bash
-#  CloudFormation 
+# 產生 CloudFormation 範本
 cdk synth
 
-# 
+# 檢視變更
 cdk diff
 
-# 
+# 執行部署
 cdk deploy NeuroAgentStack --require-approval never
 ```
 
-#### 4. 
+#### 4. 驗證部署
 ```bash
-#  API Gateway URL
+# 取得 API Gateway URL
 aws cloudformation describe-stacks \
   --stack-name NeuroAgentStack \
   --region us-east-1 \
   --query 'Stacks[0].Outputs[?OutputKey==`APIGatewayURL`].OutputValue' \
   --output text
 
-#  API
+# 測試 API
 curl https://YOUR-API-URL/health
 ```
 
 ---
 
-##  
+## 資訊安全
 
-### 
+### 安全強化機制
 
-#### 1. JWT 7 
+#### 1. JWT 驗證（7 層安全檢查）
 ```python
 def verify_token(token: str) -> str:
     payload = jwt.decode(
         token, JWT_SECRET_KEY,
-        algorithms=[JWT_ALGORITHM],  # HS256 
+        algorithms=[JWT_ALGORITHM],  # 只允許 HS256 演算法
         options={
             "verify_signature": True,
             "verify_exp": True,
@@ -500,10 +482,10 @@ def verify_token(token: str) -> str:
             "require_iat": True,
         }
     )
-    # + token 
+    # 另外檢查：token 類型、撤銷狀態、未來時間戳記
 ```
 
-#### 2. 16 
+#### 2. 輸入消毒（16 種危險模式）
 ```python
 DANGEROUS_PATTERNS = [
     r'ignore\s+(?:previous|all|above)\s+instructions?',
@@ -512,14 +494,14 @@ DANGEROUS_PATTERNS = [
     r'eval\s*\(',
     r'exec\s*\(',
     r'__import__',
-    # ... 10 more patterns
+    # ... 另外 10 種模式
 ]
 
-#  Bedrock 
+# 所有使用者輸入在傳送給 Bedrock 前都會經過消毒
 sanitized_input = sanitizer.sanitize_text(user_input)
 ```
 
-#### 3. CORS 
+#### 3. CORS 防護（特定來源白名單）
 ```python
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
@@ -528,156 +510,156 @@ ALLOWED_ORIGINS = os.getenv(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  #  "*"
-    allow_methods=["GET", "POST"],  # 
+    allow_origins=ALLOWED_ORIGINS,  # 不使用萬用字元 "*"
+    allow_methods=["GET", "POST"],  # 只允許必要的方法
     allow_headers=["Authorization", "Content-Type"],
     allow_credentials=True
 )
 ```
 
-### 
--  0 Bandit 
--  JWT 
--  
--  Git  AWS Secrets Manager / 
--  HIPAA 
--  IAM 
--  S3 
--  DynamoDB AWS 
+### 資安檢查清單
+- 0 個高風險漏洞（經 Bandit 掃描）
+- 所有端點皆需驗證（公開的 /health 除外）
+- 輸入驗證及消毒機制
+- Git 儲存庫不含任何機敏資訊（改用 AWS Secrets Manager / 環境變數）
+- 符合 HIPAA 精神的實作方式
+- IAM 角色採用最小權限原則
+- S3 儲存貯體私有化設定
+- DynamoDB 啟用 AWS 託管加密
 
 ---
 
-##  
+## 成本估算
 
-### 
+### 每月成本估算（以 10 萬次請求為基準）
 
-|  |  |  |
-|------|------|---------|
-| AWS Lambda | 1GB, 10K invocations, 3s avg | $0.00 - $8.40 |
-| API Gateway | 10K REST API requests | $0.35 |
-| DynamoDB | On-demand, 10K writes, 20K reads | $2.75 |
-| S3 | 5GB storage, 100 PUT, 500 GET | $1.15 |
-| AWS Bedrock | 1K calls, 2K tokens avg (Claude 3 Sonnet) | $36.00 |
-| ElastiCache Redis | cache.t3.micro (0.5GB) | $12.41 |
-| CloudWatch | 1GB logs, 3 alarms | $5.00 |
-| **** | | **~$40-50/** |
-| **** | | **~$120-150/** |
+| AWS 服務 | 使用量 | 每月費用 |
+|---------|-------|---------|
+| AWS Lambda | 1GB、1 萬次呼叫、平均 3 秒 | $0.00 - $8.40 |
+| API Gateway | 1 萬次 REST API 請求 | $0.35 |
+| DynamoDB | 隨選模式、1 萬次寫入、2 萬次讀取 | $2.75 |
+| S3 | 5GB 儲存、100 次 PUT、500 次 GET | $1.15 |
+| AWS Bedrock | 1,000 次呼叫、平均 2K tokens（Claude 3 Sonnet） | $36.00 |
+| ElastiCache Redis | cache.t3.micro（0.5GB） | $12.41 |
+| CloudWatch | 1GB 日誌、3 組警報 | $5.00 |
+| **未啟用快取** | | **約 $40-50/月** |
+| **啟用快取後** | | **約 $120-150/月** |
 
-### 
--  **Redis **: 60-70%  65% Bedrock 
--  **DynamoDB On-Demand**: 
--  **Lambda **:  1.2GB → 45MB
--  **CloudWatch **: 7 
+### 成本優化策略
+- 啟用 **Redis 快取**：減少 60-70% Bedrock 呼叫，每月節省 65% Bedrock 費用
+- 採用 **DynamoDB 隨選模式**：依實際使用量計費
+- 使用 **Lambda 函式優化**：壓縮部署套件從 1.2GB → 45MB
+- 設定 **CloudWatch 日誌保留期限**：7 天自動清理
 
-****: $200 $100  + $100 Hackathon **4-5 ** 
+**AWS 免費額度**：免費試用額度約 $200（Lambda $100 + Bedrock $100），約可支援 Hackathon 期間的 **4-5 個月**使用
 
 ---
 
-##  
+## 專案文件
 
-### 
-- **[README.zh-TW.md](./README.zh-TW.md)** - 
+### 核心文件
+- **[README.zh-TW.md](./README.zh-TW.md)** - 繁體中文版說明（本文件）
 - **[README.md](./README.md)** - English version
-- **[HACKATHON_SUBMISSION.md](./HACKATHON_SUBMISSION.md)** - Hackathon 5000+ 
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - 5000+ 
-- **[DEPLOYMENT_STATUS_REPORT.md](./DEPLOYMENT_STATUS_REPORT.md)** - 100+ 
-- **[CLAUDE.md](./CLAUDE.md)** - Claude Code 150+ 
+- **[HACKATHON_SUBMISSION.md](./HACKATHON_SUBMISSION.md)** - Hackathon 完整提交文件（超過 5000 行）
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - 完整部署指南（超過 5000 行）
+- **[DEPLOYMENT_STATUS_REPORT.md](./DEPLOYMENT_STATUS_REPORT.md)** - 部署狀態報告（超過 100 行）
+- **[CLAUDE.md](./CLAUDE.md)** - Claude Code 專案指南（超過 150 行）
 
-### 
-- **[AWS_INTEGRATION_HANDOFF.md](./AWS_INTEGRATION_HANDOFF.md)** - AWS 2000+ 
-- **[FINAL_ACCEPTANCE_REPORT.md](./FINAL_ACCEPTANCE_REPORT.md)** - 1500+ 
-- **[PHASE_7_2_AND_8_IMPLEMENTATION_SUMMARY.md](./PHASE_7_2_AND_8_IMPLEMENTATION_SUMMARY.md)** - 500+ 
+### 技術文件
+- **[AWS_INTEGRATION_HANDOFF.md](./AWS_INTEGRATION_HANDOFF.md)** - AWS 整合完整指南（超過 2000 行）
+- **[FINAL_ACCEPTANCE_REPORT.md](./docs/FINAL_ACCEPTANCE_REPORT.md)** - 最終驗收報告（超過 1500 行）
+- **[PHASE_7_2_AND_8_IMPLEMENTATION_SUMMARY.md](./PHASE_7_2_AND_8_IMPLEMENTATION_SUMMARY.md)** - 實作階段總結（超過 500 行）
 
-### 
-- **[ARCHITECTURE_UML.md](./ARCHITECTURE_UML.md)** - UML 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 
-- **[POST_DIAGNOSIS_SEQUENCE.md](./POST_DIAGNOSIS_SEQUENCE.md)** - API 
+### 架構文件
+- **[ARCHITECTURE_UML.md](./ARCHITECTURE_UML.md)** - UML 類別圖
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 資料庫架構
+- **[POST_DIAGNOSIS_SEQUENCE.md](./POST_DIAGNOSIS_SEQUENCE.md)** - API 時序圖
 
-### Demo 
-- **[data/demo_cases.json](./data/demo_cases.json)** - 6 
-  - : PubMed Central, Frontiers in Neurology, University of Utah (2009-2024)
-  - 
-
----
-
-##  
-
-###  Phase 1-10 Complete (100%)
-- [x] AI Phase 1-6
-- [x] Phase 7-2
-- [x] Phase 8-1
-- [x] Phase 8-2
-- [x] CDK Phase 9-1
-- [x] AWS Phase 9
-- [x] Demo Phase 10
-- [x] 94/94 100%
-- [x] Hackathon 
-
-###  AWS AI Agent Global Hackathon 2025
-****:  Readiness: 98/100
-
-****:
--  5000+ 
--  
--  Live API Demo
--  6 
--  10,000+ 
+### Demo 資料
+- **[data/demo_cases.json](./data/demo_cases.json)** - 6 組真實病例資料
+  - 資料來源：PubMed Central、Frontiers in Neurology、University of Utah（2009-2024）
+  - 涵蓋範圍：偏頭痛、中風、多發性硬化症、癲癇、帕金森氏症
 
 ---
 
-##  
+## 開發進度
+
+### 第 1-10 階段已完成（100%）
+- [x] AI 診斷引擎（第 1-6 階段）
+- [x] 醫學影像分析（第 7-2 階段）
+- [x] 效能優化與快取（第 8-1 階段）
+- [x] 資安強化（第 8-2 階段）
+- [x] CDK 部署（第 9-1 階段）
+- [x] AWS 正式部署（第 9 階段）
+- [x] Demo 與文件（第 10 階段）
+- [x] 所有測試通過 94/94（100%）
+- [x] Hackathon 提交文件完成
+
+### 參加 AWS AI Agent Global Hackathon 2025
+**提交狀態**：完全就緒（Readiness: 98/100）
+
+**完成項目**：
+- 超過 5000 行的完整文件
+- 完整的架構設計圖
+- Live API Demo
+- 6 組真實病例資料
+- 超過 10,000 行的說明文件
+
+---
+
+## 致謝
 
 ### AWS AI Agent Global Hackathon 2025
- AWS AI Agent Global Hackathon 2025 
+本專案為 AWS AI Agent Global Hackathon 2025 所開發。
 
-### 
-- **AWS Bedrock Team** -  Claude 3 Sonnet 
-- **Anthropic** -  Claude  Claude Code 40% 
-- **FastAPI Community** -  Web 
-- **AWS CDK Community** - 
+### 技術支援
+- **AWS Bedrock Team** - 提供 Claude 3 Sonnet 模型
+- **Anthropic** - 開發 Claude 系列模型，本專案使用 Claude Code 完成 40% 的程式碼
+- **FastAPI Community** - 提供高效能 Web 框架
+- **AWS CDK Community** - 基礎設施即程式碼工具
 
-### 
-- **PubMed Central / NIH** - 
-- **Frontiers in Neurology** - 
-- **University of Utah Medical Library** - MS 
-
----
-
-##  
-
-****: NeuroAgent  **** AWS AI Agent Global Hackathon 2025 
-
--  ** FDA **
--  ****
--  ****
--  ——119/911
--   AWS AI/ML 
-
-****
+### 醫學資料來源
+- **PubMed Central / NIH** - 提供醫學研究文獻
+- **Frontiers in Neurology** - 提供神經科案例研究
+- **University of Utah Medical Library** - 提供 MS 病例資料
 
 ---
 
-##  
+## 免責聲明
 
-### 
-- **GitHub**: [@thc1006](https://github.com/thc1006)
-- **Repository**:
-  - GitHub: https://github.com/thc1006/neuro-agent
-  - GitLab: https://gitlab.com/thc1006/neuro-agent
+**重要提醒**：NeuroAgent 系統**僅供教育及展示用途**，專為 AWS AI Agent Global Hackathon 2025 開發。
 
-### 
-- **Issues**: https://github.com/thc1006/neuro-agent/issues
-- **Documentation**: 
+- 本系統**尚未取得 FDA 或 TFDA 核准**
+- 所有**診斷建議皆需由專業醫師審核**
+- **不得直接用於臨床病患照護**
+- 請遵循「醫師法」第 11 條——僅限執業醫師執行診療業務
+- 本系統遵循 AWS AI/ML 負責任使用指引
 
-### AWS 
-- **AWS Support Console**: https://console.aws.amazon.com/support/
-- **Bedrock Documentation**: https://docs.aws.amazon.com/bedrock/
+**僅供研究、學習與展示使用**
 
 ---
 
-##  Star History
+## 聯絡資訊
 
+### 專案維護者
+- **GitHub**：[@thc1006](https://github.com/thc1006)
+- **Repository**：
+  - GitHub：https://github.com/thc1006/neuro-agent
+  - GitLab：https://gitlab.com/thc1006/neuro-agent
 
+### 技術支援
+- **Issues**：https://github.com/thc1006/neuro-agent/issues
+- **Documentation**：參閱本文件及專案文件目錄
+
+### AWS 支援
+- **AWS Support Console**：https://console.aws.amazon.com/support/
+- **Bedrock Documentation**：https://docs.aws.amazon.com/bedrock/
+
+---
+
+## Star History
+
+如果這個專案對您有幫助，請給我們一顆 Star！
 
 [![Star History Chart](https://api.star-history.com/svg?repos=thc1006/neuro-agent&type=Date)](https://star-history.com/#thc1006/neuro-agent&Date)
 
@@ -685,12 +667,12 @@ app.add_middleware(
 
 <div align="center">
 
-**Built with  for Healthcare AI**
+**用心打造醫療 AI**
 
-[Report Bug](https://github.com/thc1006/neuro-agent/issues) ·
-[Request Feature](https://github.com/thc1006/neuro-agent/issues) ·
-[View Documentation](./HACKATHON_SUBMISSION.md) ·
-[Try Live Demo](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
+[回報問題](https://github.com/thc1006/neuro-agent/issues) ·
+[功能建議](https://github.com/thc1006/neuro-agent/issues) ·
+[查看文件](./HACKATHON_SUBMISSION.md) ·
+[線上展示](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
 
 **AWS AI Agent Global Hackathon 2025** | © 2025 NeuroAgent Project
 
