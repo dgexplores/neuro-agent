@@ -219,7 +219,10 @@ CRITICAL MEDICAL SAFETY RULE:
 **Resources**:
 - 🔗 **Live API**: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
 - 📂 **GitHub**: https://github.com/thc1006/neuro-agent
-- 📖 **Documentation**: 10,000+ lines across 5 comprehensive guides
+- 📖 **Documentation**: 10,000+ lines across 8 comprehensive guides
+  - [Frontend User Guide](./docs/FRONTEND_USER_GUIDE.zh-TW.md) - Complete React UI operation manual
+  - [Medical Professional Quickstart](./docs/MEDICAL_PROFESSIONAL_QUICKSTART.zh-TW.md) - Clinician-friendly guide
+  - [Complete API Tutorial](./docs/API_TUTORIAL.zh-TW.md) - Developer integration guide
 
 > "Thank you! NeuroAgent is ready to save lives through AI-augmented diagnosis. Questions?"
 

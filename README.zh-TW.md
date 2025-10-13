@@ -575,6 +575,24 @@ app.add_middleware(
 - **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 資料庫架構
 - **[POST_DIAGNOSIS_SEQUENCE.md](./POST_DIAGNOSIS_SEQUENCE.md)** - API 時序圖
 
+### 使用者指南（繁體中文）
+- **[前端使用手冊](./docs/FRONTEND_USER_GUIDE.zh-TW.md)** - React UI 完整操作指南（850+ 行）
+  - 登入與驗證流程
+  - 診斷功能操作步驟
+  - 藥物交互作用檢查
+  - 醫學影像上傳與分析
+  - 常見問題排解
+- **[醫療專業人員快速入門](./docs/MEDICAL_PROFESSIONAL_QUICKSTART.zh-TW.md)** - 非技術人員友好指南（900+ 行）
+  - 5 分鐘上手教學
+  - 實際臨床應用案例
+  - HIS 系統整合指南
+  - 醫療法規與安全考量
+- **[完整 API Tutorial](./docs/API_TUTORIAL.zh-TW.md)** - 開發者完整指南（1100+ 行）
+  - JWT 認證機制詳解
+  - 7 個 API 端點完整文檔
+  - Python/Node.js/cURL 範例
+  - 錯誤處理與效能優化
+
 ### Demo 資料
 - **[data/demo_cases.json](./data/demo_cases.json)** - 6 組真實病例資料
   - 資料來源：PubMed Central、Frontiers in Neurology、University of Utah（2009-2024）
