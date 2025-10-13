@@ -1,0 +1,13 @@
+# Use official AWS Lambda Python 3.11 base image
+# This ensures 100% compatibility with Lambda runtime
+FROM public.ecr.aws/lambda/python:3.11
+
+# Copy requirements file
+COPY requirements-lambda.txt /tmp/requirements-lambda.txt
+
+# Install dependencies to /asset directory
+# This matches the Lambda layer structure
+RUN pip install --no-cache-dir -r /tmp/requirements-lambda.txt -t /asset/python
+
+# The /asset/python directory will contain all compiled packages
+# compatible with AWS Lambda Python 3.11 runtime

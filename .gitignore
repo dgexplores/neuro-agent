@@ -45,3 +45,8 @@ logs/
 Thumbs.db
 mcp-servers/
 .chainlit/
+CLAUDE.md
+CLAUDE.md.sha256
+claude-code-workflow-zh.md
+*.claude/
+
