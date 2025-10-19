@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// 判断环境：Vercel 上使用生产 API，本地开发使用 localhost
+const isProduction = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL?.includes('localhost');
+const API_BASE_URL = isProduction
+  ? 'https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod'
+  : (process.env.REACT_APP_API_URL || 'http://localhost:8000');
 
 // Create axios instance with default configuration
 const api = axios.create({
