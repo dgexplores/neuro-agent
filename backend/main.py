@@ -37,11 +37,11 @@ else:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # ✅ FIXED: Whitelist specific origins or all
-    allow_credentials=False,  # ✅ FIXED: Set to False to allow wildcard origins
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # ✅ FIXED: Include OPTIONS for preflight
-    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],  # ✅ FIXED: Specific headers only
-    max_age=600,  # Cache preflight requests for 10 minutes
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=False,  # Must be False for wildcard origins
+    allow_methods=["*"],  # Allow all methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
+    max_age=3600,  # Cache preflight for 1 hour
 )
 
 # Security
@@ -58,6 +58,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "services": {"bedrock": "connected"}}
+
+# Explicit OPTIONS handler for all routes to handle CORS preflight
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    return {"message": "OK"}
 
 @app.post("/api/v1/diagnosis", response_model=DiagnosisResponse)
 async def create_diagnosis(
