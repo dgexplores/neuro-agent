@@ -9,7 +9,8 @@ class BedrockService:
     def __init__(self):
         self.region = os.getenv("AWS_REGION", "us-east-1")
         self.agent_id = os.getenv("BEDROCK_AGENTCORE_AGENT_ID")
-        self.model_id = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+        # Use Mistral Large if Claude models are not available
+        self.model_id = os.getenv("BEDROCK_MODEL_ID", "mistral.mistral-large-2402-v1:0")
 
         # Initialize Bedrock clients
         self.bedrock_runtime = boto3.client("bedrock-runtime", region_name=self.region)
@@ -95,19 +96,34 @@ class BedrockService:
             }
 
     def _invoke_model_sync(self, prompt: str) -> Dict[str, Any]:
-        """Synchronous model invocation"""
+        """Synchronous model invocation - supports both Anthropic and Mistral models"""
 
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 4096,
-            "temperature": 0.1
-        })
+        # Detect model type and use appropriate format
+        if "mistral" in self.model_id.lower():
+            # Mistral model format
+            body = json.dumps({
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": 2048,
+                "temperature": 0.1
+            })
+        else:
+            # Anthropic Claude model format
+            body = json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": 4096,
+                "temperature": 0.1
+            })
 
         response = self.bedrock_runtime.invoke_model(
             body=body,
@@ -117,7 +133,14 @@ class BedrockService:
         )
 
         response_body = json.loads(response['body'].read())
-        content = response_body['content'][0]['text']
+
+        # Extract content based on model type
+        if "mistral" in self.model_id.lower():
+            # Mistral response format
+            content = response_body['choices'][0]['message']['content']
+        else:
+            # Anthropic Claude response format
+            content = response_body['content'][0]['text']
 
         return {"output": {"text": content}}
 

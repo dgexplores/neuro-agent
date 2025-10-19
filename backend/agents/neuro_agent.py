@@ -174,41 +174,26 @@ class NeuroAgent:
             context['clinical_data']['imaging']
         )
 
-        prompt = f"""
-        You are an expert neurologist AI assistant. Analyze the following patient case and provide a comprehensive neurological assessment.
+        prompt = f"""You are an expert neurologist AI assistant. Analyze this patient case and provide assessment in JSON format ONLY.
 
-        PATIENT INFORMATION:
-        - Age: {context['patient_demographics']['age']}
-        - Gender: {context['patient_demographics']['gender']}
-        - Medical History: {', '.join(medical_history) if medical_history else 'None'}
+Patient: {context['patient_demographics']['age']}-year-old {context['patient_demographics']['gender']}
+History: {', '.join(medical_history) if medical_history else 'No significant history'}
+Chief Complaint: {chief_complaint}
+Symptoms: {symptoms}
+History: {history}
+Vital Signs: BP {context['clinical_data']['vital_signs'].get('bp_systolic', '?')}/{context['clinical_data']['vital_signs'].get('bp_diastolic', '?')}, HR {context['clinical_data']['vital_signs'].get('heart_rate', '?')} bpm
 
-        CLINICAL PRESENTATION:
-        - Chief Complaint: {chief_complaint}
-        - Symptoms: {symptoms}
-        - History of Present Illness: {history}
-
-        CLINICAL DATA:
-        - Vital Signs: {json.dumps(context['clinical_data']['vital_signs'])}
-        - Lab Results: {json.dumps(context['clinical_data']['lab_results'])}
-        - Imaging Studies: {', '.join(imaging_studies) if imaging_studies else 'None'}
-
-        Please provide:
-        1. Top 3 differential diagnoses with confidence scores
-        2. Clinical reasoning for each diagnosis
-        3. Recommended investigations
-        4. Risk stratification
-        5. Immediate management recommendations
-
-        Format your response as JSON with the following structure:
-        {{
-            "differential_diagnoses": [
-                {{"condition": "...", "confidence": 0.0-1.0, "reasoning": "..."}}
-            ],
-            "recommendations": ["..."],
-            "risk_factors": ["..."],
-            "next_steps": ["..."]
-        }}
-        """
+RESPOND WITH ONLY VALID JSON, NO OTHER TEXT:
+{{
+    "differential_diagnoses": [
+        {{"condition": "condition name", "confidence": 0.85, "reasoning": "clinical reasoning"}},
+        {{"condition": "condition name 2", "confidence": 0.65, "reasoning": "clinical reasoning"}},
+        {{"condition": "condition name 3", "confidence": 0.45, "reasoning": "clinical reasoning"}}
+    ],
+    "recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
+    "risk_factors": ["risk factor 1", "risk factor 2"],
+    "next_steps": ["next step 1", "next step 2"]
+}}"""
 
         return prompt
 

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test NeuroAgent Frontend</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .status { padding: 10px; margin: 10px 0; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        textarea { width: 100%; height: 200px; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NeuroAgent Frontend Test</h1>
+
+        <div class="section">
+            <h2>1. Test Frontend Accessibility</h2>
+            <button onclick="testFrontend()">Test Frontend</button>
+            <div id="frontend-result" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Check Backend API</h2>
+            <button onclick="testBackend()">Test Backend</button>
+            <div id="backend-result" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Test Diagnosis API</h2>
+            <p>If clicking "Test Backend" shows the backend is healthy, click this button:</p>
+            <button onclick="testDiagnosis()">Test Diagnosis API</button>
+            <div id="diagnosis-result" class="status"></div>
+            <textarea id="diagnosis-output" readonly></textarea>
+        </div>
+
+        <div class="section">
+            <h2>4. Test with Stroke Symptoms</h2>
+            <button onclick="testStrokeCase()">Test Stroke Case</button>
+            <div id="stroke-result" class="status"></div>
+            <p>Expected diagnosis: "Acute Ischemic Stroke" or similar</p>
+            <p>If you see "Migraine" - the frontend still has hardcoded data!</p>
+            <textarea id="stroke-output" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        const FRONTEND_URLS = [
+            "https://neuro-agent-34nxqjgfx-thc1006s-projects.vercel.app",
+            "https://neuro-agent-ej9bhtfyh-thc1006s-projects.vercel.app",
+            "https://frontend-ochre-nine-99.vercel.app"
+        ];
+
+        const BACKEND_URL = "https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod";
+
+        async function testFrontend() {
+            const resultDiv = document.getElementById('frontend-result');
+            resultDiv.innerHTML = "Testing...";
+
+            try {
+                // Test all URLs
+                for (const url of FRONTEND_URLS) {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        resultDiv.innerHTML = `<div class="success">[OK] Frontend accessible: ${url}</div>`;
+                        return;
+                    }
+                }
+                resultDiv.innerHTML = `<div class="error">[ERROR] All frontend URLs failed</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">[ERROR] ${error.message}</div>`;
+            }
+        }
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.innerHTML = "Testing...";
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">[OK] Backend healthy: ${JSON.stringify(data)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">[ERROR] Health check failed: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">[ERROR] ${error.message}</div>`;
+            }
+        }
+
+        async function testDiagnosis() {
+            const resultDiv = document.getElementById('diagnosis-result');
+            const outputDiv = document.getElementById('diagnosis-output');
+            resultDiv.innerHTML = "Testing...";
+
+            // Generate JWT token (mock)
+            const token = "REDACTED";
+
+            const payload = {
+                patient_info: {
+                    age: 35,
+                    gender: "female",
+                    medical_history: [],
+                    current_medications: [],
+                    allergies: []
+                },
+                symptoms: [
+                    { name: "headache", severity: "severe", duration_days: 1, description: "" }
+                ],
+                vital_signs: { bp_systolic: 120, bp_diastolic: 80, heart_rate: 72, temperature: 37 },
+                lab_results: {},
+                imaging_studies: [],
+                chief_complaint: "Headache",
+                history_present_illness: "Acute headache"
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v1/diagnosis`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                outputDiv.value = JSON.stringify(data, null, 2);
+
+                if (response.ok) {
+                    const diagnosis = data.diagnosis[0]?.condition || "Unknown";
+                    resultDiv.innerHTML = `<div class="success">[OK] API returned: ${diagnosis}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">[ERROR] API error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                outputDiv.value = error.message;
+                resultDiv.innerHTML = `<div class="error">[ERROR] ${error.message}</div>`;
+            }
+        }
+
+        async function testStrokeCase() {
+            const resultDiv = document.getElementById('stroke-result');
+            const outputDiv = document.getElementById('stroke-output');
+            resultDiv.innerHTML = "Testing...";
+
+            // Generate JWT token
+            const token = "REDACTED";
+
+            const payload = {
+                patient_info: {
+                    age: 68,
+                    gender: "male",
+                    medical_history: ["hypertension", "diabetes"],
+                    current_medications: ["lisinopril"],
+                    allergies: []
+                },
+                symptoms: [
+                    { name: "acute onset weakness", severity: "severe", duration_days: 0, description: "" },
+                    { name: "facial drooping", severity: "severe", duration_days: 0, description: "" },
+                    { name: "speech difficulty", severity: "severe", duration_days: 0, description: "" }
+                ],
+                vital_signs: { bp_systolic: 165, bp_diastolic: 98, heart_rate: 92, temperature: 37.2 },
+                lab_results: {},
+                imaging_studies: [],
+                chief_complaint: "Sudden weakness",
+                history_present_illness: "Acute stroke symptoms"
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v1/diagnosis`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                outputDiv.value = JSON.stringify(data, null, 2);
+
+                if (response.ok) {
+                    const diagnosis = data.diagnosis[0]?.condition || "Unknown";
+
+                    // Check if it's hardcoded migraine
+                    if (diagnosis.toLowerCase().includes("migraine")) {
+                        resultDiv.innerHTML = `<div class="error">[ERROR] Still getting Migraine diagnosis for stroke symptoms! Frontend has hardcoded data.</div>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="success">[OK] Correct diagnosis: ${diagnosis}</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">[ERROR] API error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                outputDiv.value = error.message;
+                resultDiv.innerHTML = `<div class="error">[ERROR] ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
