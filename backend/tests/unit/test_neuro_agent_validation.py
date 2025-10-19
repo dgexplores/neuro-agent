@@ -33,7 +33,7 @@ from backend.services.bedrock_service import BedrockService
 def mock_bedrock_service():
     """Mock BedrockService for testing without AWS"""
     mock_service = Mock(spec=BedrockService)
-    mock_service.invoke_agent = AsyncMock(return_value={
+    mock_service.invoke_model_direct = AsyncMock(return_value={
         "output": {
             "text": '{"differential_diagnoses": [], "recommendations": [], "risk_factors": [], "next_steps": []}'
         }
