@@ -89,7 +89,9 @@ const DiagnosisPage = () => {
       const response = await submitDiagnosis(diagnosisRequest);
       setResults(response);
     } catch (err) {
-      setError('診斷分析時發生錯誤，請稍後再試');
+      // Provide more detailed error message for debugging
+      const errorMessage = err.message || '診斷分析時發生錯誤，請稍後再試';
+      setError(errorMessage);
       console.error('Diagnosis error:', err);
     } finally {
       setLoading(false);

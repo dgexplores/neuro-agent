@@ -134,15 +134,14 @@ class NeuroAgent:
         prompt = self._build_diagnostic_prompt(context)
 
         try:
-            response = await self.bedrock_service.invoke_agent(
-                agent_id="neuro-diagnosis-agent",
-                session_id=str(uuid.uuid4()),
-                input_text=prompt
-            )
+            # Use direct model invocation instead of AgentCore
+            # This bypasses the need for a valid Agent ID
+            response = await self.bedrock_service.invoke_model_direct(prompt)
 
             return self._parse_agent_response(response)
 
         except Exception as e:
+            logger.error(f"Error invoking Bedrock model: {e}")
             # Fallback to rule-based diagnosis
             return self._fallback_diagnosis(context)
 
@@ -234,6 +233,25 @@ class NeuroAgent:
 
         # Fallback parsing
         return self._fallback_diagnosis_parsing(response)
+
+    def _fallback_diagnosis_parsing(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """Fallback parsing when JSON extraction fails"""
+        return {
+            "diagnosis": [
+                {
+                    "condition": "Comprehensive neurological evaluation required",
+                    "confidence": 0.4,
+                    "reasoning": "Unable to parse structured response from AI model"
+                }
+            ],
+            "confidence": 0.4,
+            "recommendations": [
+                "Professional neurological consultation recommended",
+                "Complete clinical assessment needed"
+            ],
+            "risk_factors": [],
+            "next_steps": ["Refer to neurology specialist"]
+        }
 
     def _calculate_overall_confidence(self, diagnosis_data: Dict[str, Any]) -> float:
         """Calculate overall confidence score from differential diagnoses"""

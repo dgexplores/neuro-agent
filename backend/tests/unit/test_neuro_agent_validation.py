@@ -256,7 +256,7 @@ async def test_potentially_malicious_input_should_be_sanitized(neuro_agent, vali
     )
 
     # Capture the prompt that gets built
-    with patch.object(neuro_agent.bedrock_service, 'invoke_agent', new_callable=AsyncMock) as mock_invoke:
+    with patch.object(neuro_agent.bedrock_service, 'invoke_model_direct', new_callable=AsyncMock) as mock_invoke:
         mock_invoke.return_value = {
             "output": {
                 "text": '{"differential_diagnoses": [], "recommendations": [], "risk_factors": [], "next_steps": []}'
@@ -270,7 +270,7 @@ async def test_potentially_malicious_input_should_be_sanitized(neuro_agent, vali
 
         # Verify the prompt was sanitized (no HTML/script tags or SQL injection)
         assert mock_invoke.called
-        prompt_sent = mock_invoke.call_args[1]['input_text']
+        prompt_sent = mock_invoke.call_args[0][0]
 
         # Verify XSS attempts are sanitized
         assert "<script>" not in prompt_sent

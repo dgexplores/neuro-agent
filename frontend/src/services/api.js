@@ -46,46 +46,12 @@ export const submitDiagnosis = async (diagnosisRequest) => {
   } catch (error) {
     console.error('Diagnosis submission error:', error);
 
-    // Return mock response for demo purposes
-    return {
-      case_id: `demo-case-${Date.now()}`,
-      diagnosis: [
-        {
-          condition: '偏頭痛 (Migraine)',
-          confidence: 0.85,
-          reasoning: '基於症狀模式和患者年齡，偏頭痛是最可能的診斷'
-        },
-        {
-          condition: '緊張性頭痛 (Tension Headache)', 
-          confidence: 0.65,
-          reasoning: '考慮到壓力因素和頭痛特徵'
-        },
-        {
-          condition: '叢集性頭痛 (Cluster Headache)',
-          confidence: 0.30,
-          reasoning: '症狀模式不太符合，但需要排除'
-        }
-      ],
-      confidence: 0.82,
-      recommendations: [
-        '建議進行神經學檢查',
-        '考慮使用三叉神經止痛劑治療',
-        '評估生活型態觸發因子',
-        '考慮預防性治療的必要性'
-      ],
-      risk_factors: [
-        '女性患者',
-        '育齡期',
-        '壓力相關因素'
-      ],
-      next_steps: [
-        '安排追蹤門診',
-        '頭痛日記記錄',
-        '必要時安排腦部影像檢查',
-        '評估藥物治療反應'
-      ],
-      timestamp: new Date().toISOString()
-    };
+    // Re-throw error instead of returning mock data
+    // This allows proper error handling in the UI
+    throw new Error(
+      `無法連接到診斷服務: ${error.response?.status || error.message}。` +
+      `請確保後端服務正在運行且配置正確。`
+    );
   }
 };
 
