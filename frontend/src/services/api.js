@@ -18,9 +18,11 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    // Valid JWT token with proper signature (expires in 2076)
-    // Generated with JWT secret key from backend
-    const token = 'REDACTED';
+    // JWT token - use environment variable or fallback to hardcoded demo token
+    // Generate new token: python generate_token.py
+    const token = process.env.REACT_APP_JWT_TOKEN ||
+      'REDACTED';
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
