@@ -18,7 +18,8 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    // For hackathon demo, use a demo token
+    // Valid JWT token with proper signature (expires in 2076)
+    // Generated with JWT secret key from backend
     const token = 'REDACTED';
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
