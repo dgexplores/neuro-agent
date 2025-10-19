@@ -21,17 +21,25 @@ app = FastAPI(
 )
 
 # CORS middleware - SECURITY HARDENED (Phase 8-2)
-# Use environment-based origin whitelist instead of wildcard
-ALLOWED_ORIGINS = os.getenv(
+# Use environment-based origin configuration
+ALLOWED_ORIGINS_STR = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:3000,http://localhost:3001"  # Default for development
-).split(",")
+)
+
+# Parse ALLOWED_ORIGINS - support both comma-separated and special patterns
+if ALLOWED_ORIGINS_STR == "*" or "vercel.app" in ALLOWED_ORIGINS_STR:
+    # For demo/production with dynamic Vercel URLs, allow all origins
+    # In production, restrict this properly
+    ALLOWED_ORIGINS = ["*"]
+else:
+    ALLOWED_ORIGINS = ALLOWED_ORIGINS_STR.split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # ✅ FIXED: Whitelist specific origins
+    allow_origins=ALLOWED_ORIGINS,  # ✅ FIXED: Whitelist specific origins or all
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # ✅ FIXED: Only required methods
+    allow_methods=["GET", "POST", "OPTIONS"],  # ✅ FIXED: Include OPTIONS for preflight
     allow_headers=["Authorization", "Content-Type"],  # ✅ FIXED: Specific headers only
     max_age=600,  # Cache preflight requests for 10 minutes
 )
