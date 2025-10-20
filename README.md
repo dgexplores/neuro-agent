@@ -11,13 +11,6 @@
 
 **Production Status**: Live and Operational | **Test Coverage**: 100% (94/94 tests passing) | **Security**: 0 High-Severity Vulnerabilities
 
-## Live Deployment
-
-- **Frontend**: https://neuro-agent-inipnfo7p-thc1006s-projects.vercel.app/
-- **Backend API**: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/
-- **API Docs**: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/docs
-- **Health Check**: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/health
-
 ---
 
 ## Key Features
