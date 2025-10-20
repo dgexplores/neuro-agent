@@ -94,6 +94,45 @@ tests/integration/ .................................................. [100%]
 
 ---
 
+## 🎬 Demo Video
+
+### AWS AI Agent Global Hackathon 2025 - 3-Minute Demo
+
+**Final Video**: `demo_video/output/NeuroAgent_Demo_Final.mp4` (14 MB, 3 min 28 sec)
+
+**Video Structure**:
+- `[00:00-00:03]` Intro card - NeuroAgent branding
+- `[00:03-03:03]` Main demonstration (3 minutes)
+  - Frontend interface walkthrough
+  - **Real end-to-end diagnosis demo**: Patient form filling → AI processing → Diagnosis results
+  - GitHub repository showcase
+  - Security testing & 94/94 tests passed
+  - System architecture & cost optimization
+- `[03:03-03:07]` Outro card - Project summary & GitHub link
+
+**Technical Specs**:
+- Resolution: 1920x1080 (Full HD)
+- Video Codec: H.264 (NVIDIA NVENC GPU-accelerated)
+- Audio Codec: AAC, 48kHz, 192 kbps
+- Frame Rate: 30 fps
+- Narration: Amazon Polly Neural TTS (Joanna voice)
+
+**Audio Files** (Available in `demo_video/narration/`):
+- WAV format (high quality): 18.2 MB total
+- MP3 format (compressed): 2.2 MB total
+- Complete transcript: `demo_video/narration/transcript.txt`
+
+**Production Pipeline**:
+1. **Recording**: Playwright browser automation (1920x1080)
+2. **Narration**: Amazon Polly Neural TTS (~10 seconds generation)
+3. **Editing**: FFmpeg GPU acceleration (NVIDIA NVENC)
+4. **Branding**: Intro/outro cards with fade effects
+5. **Output**: Production-ready MP4 for hackathon submission
+
+**Cost**: $0.00 (Amazon Polly within free tier, ~2,100 characters)
+
+---
+
 ##  Quick Start
 
 ### Prerequisites
