@@ -46,9 +46,22 @@ logs/
 Thumbs.db
 mcp-servers/
 .chainlit/
+
+# Claude Code (keep local, exclude from git)
 CLAUDE.md
 CLAUDE.md.sha256
 claude-code-workflow-zh.md
-*.claude/
+.claude/
+
+# Testing artifacts
+.pytest_cache/
+.benchmarks/
+htmlcov/
+.coverage
+*.cover
+
+# Temporary scripts and build artifacts
+test_*.html
+PROJECT_CLEANUP_REPORT.md
 
 .vercel
