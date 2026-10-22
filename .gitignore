@@ -69,3 +69,5 @@ PROJECT_CLEANUP_REPORT.md
 # Local verification output
 reports/
 reports-full-tests.txt
+
+.ci-venv/
