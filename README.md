@@ -87,7 +87,7 @@ Install acceptance-test dependencies with `python -m pip install 'pytest-bdd>=6.
 python -m pytest backend/tests tests/test_*.py -q
 ```
 
-Verified on Python 3.11: **115 tests passed**, including live local SQLite operations, HTTP endpoint contracts, three executable BDD scenarios, and offline Bedrock/DynamoDB/S3 SDK stubs. This does not measure medical accuracy or confirm AWS deployment. Frontend, container, and infrastructure verification is tracked in the [CI/CD guide](docs/CI_CD.md) and [infrastructure evidence](docs/INFRASTRUCTURE_EVIDENCE.md).
+Verified on Python 3.11: **121 tests passed**, including live local SQLite operations, HTTP endpoint contracts, three executable BDD scenarios, and offline Bedrock/DynamoDB/S3 SDK stubs. This does not measure medical accuracy or confirm AWS deployment. Frontend, container, and infrastructure verification is tracked in the [CI/CD guide](docs/CI_CD.md) and [infrastructure evidence](docs/INFRASTRUCTURE_EVIDENCE.md).
 
 ## Browser routes and hosting
 

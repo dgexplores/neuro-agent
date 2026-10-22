@@ -92,7 +92,7 @@ Both full and production-only npm audits reported zero vulnerabilities on
 22 October 2026. This is an advisory snapshot, not a guarantee against future
 findings. CI runs the complete npm audit at the low severity threshold.
 
-The Python backend verification reported 115 active tests passing in a clean environment. Canonical
+The Python backend verification reported 121 active tests passing in a clean environment. Canonical
 CDK synthesis and contract assertions passed with DynamoDB selected. The Linux
 ARM64 backend image built and its Uvicorn health and OpenAPI endpoints returned
 200; unauthenticated case lookup returned 403. `.dockerignore` excludes local

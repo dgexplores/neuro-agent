@@ -25,7 +25,7 @@ AWS_ACCESS_KEY_ID=testing AWS_SECRET_ACCESS_KEY=testing AWS_EC2_METADATA_DISABLE
   .venv/bin/python -m pytest backend/tests tests/test_*.py -q
 ```
 
-Result on Python 3.11.15: **115 passed**, with one inherited HTTPX raw-upload deprecation warning. Provider clients use botocore stubs; dummy credentials are test-only. No cloud resources, requests, or charges were created by these tests.
+Result on Python 3.11.15: **121 passed**, with one inherited HTTPX raw-upload deprecation warning. Provider clients use botocore stubs; dummy credentials are test-only. No cloud resources, requests, or charges were created by these tests.
 
 The provider tests cover Claude and Mistral text payload formats, image data and media type, unsupported models, image byte/signature limits, malformed provider responses, and provider failures. The case tests exercise real SQLite and assert DynamoDB serialization/conditional insert/owner scope with the AWS SDK. SDK stubs verify request contracts, not AWS availability or deployed IAM.
 

@@ -63,11 +63,6 @@ async def root():
 async def health_check():
     return {"status": "healthy", "services": {"bedrock": "not_checked"}}
 
-# Explicit OPTIONS handler for all routes to handle CORS preflight
-@app.options("/{full_path:path}")
-async def options_handler(full_path: str):
-    return {"message": "OK"}
-
 @app.post("/api/v1/diagnosis", response_model=DiagnosisResponse)
 async def create_diagnosis(
     request: DiagnosisRequest,

@@ -13,6 +13,6 @@ This copy extends [thc1006/neuro-agent](https://github.com/thc1006/neuro-agent).
 
 ## Verification and provenance
 
-The complete active backend suite passed115 tests locally on Python3.11. Original mock-only acceptance specifications are preserved in `archive/upstream_acceptance/`. Provider stubs do not establish live cloud behavior. CI/CD and infrastructure details are maintained in their technical guides.
+The complete active backend suite passed 121 tests locally on Python 3.11. Original mock-only acceptance specifications are preserved in `archive/upstream_acceptance/`. Provider stubs do not establish live cloud behavior. CI/CD and infrastructure details are maintained in their technical guides.
 
 These changes were developed with AI assistance. Understand and explain the implementation before presenting it as experience; inherited code and upstream deployments remain credited to their authors. Recruiter-oriented documentation is deferred until a deployed application is verified. No personal identity, degree, or employment details are invented here.

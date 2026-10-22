@@ -12,7 +12,7 @@ verification when updating dependencies.
 The complete pinned runtime audit reports **zero known vulnerabilities**. The
 full frontend npm audit also reports **zero vulnerabilities**. These are dated
 advisory snapshots, not proof against unknown vulnerabilities. CI repeats both
-audits. A fresh Python environment passed all 115 backend tests, the frontend
+audits. A fresh Python environment passed all 121 backend tests, the frontend
 passed 14 tests, and the freshly rebuilt Linux x86_64 Python 3.11 Lambda layer
 passed an actual Linux import and HTTP health check. CDK assertions and the
 runtime container health/OpenAPI/authentication smoke checks passed.

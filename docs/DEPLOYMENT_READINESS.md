@@ -60,3 +60,5 @@ After an approved release, verify HTTPS `/health`, `/openapi.json`, missing-toke
 404, frontend nested-route refreshes, missing assets, CORS and service-error
 messages. Save the actual URL and evidence before adding recruiter deployment
 claims. Local successful synthesis does not establish any of these cloud checks.
+
+The real Mangum entry point is covered by API Gateway REST proxy-event tests for health, OpenAPI, missing credentials and unknown API paths. CORS preflight is handled by middleware; an inherited catchall OPTIONS route was removed so unknown GET paths correctly return 404. Allowed and rejected preflight origins are covered by regression tests.
