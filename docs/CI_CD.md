@@ -107,3 +107,13 @@ unverified. Cloud spending is not enabled.
 ## HTTPS frontend delivery
 
 The canonical stack includes a retained private S3 frontend bucket and CloudFront distribution with SPA rewriting. Configure `FRONTEND_DISTRIBUTION_ID` to invalidate its cache after upload. CORS includes the generated HTTPS frontend origin. See `DEPLOYMENT_READINESS.md` for stack outputs, routing and the manual account bootstrap boundary.
+
+## Reproducible backend test container
+
+The backend CI job runs `bash scripts/test_backend_container.sh`. A whitelisted
+build context includes the locked runtime, pinned test tools and application
+sources, while excluding credentials and local caches. Tests run in the built
+Linux Python 3.11 image with `--network none` and write a JUnit report to the
+host's `reports/` directory. Both per-test and overall process deadlines are
+active. The same command can be used locally with Docker. Host-native pytest
+runs remain available through `make test`.

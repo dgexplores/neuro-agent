@@ -9,26 +9,11 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_REGION: us-east-1
-      AWS_EC2_METADATA_DISABLED: 'true'
-      AWS_ACCESS_KEY_ID: testing
-      AWS_SECRET_ACCESS_KEY: testing
-      PYTHONUNBUFFERED: '1'
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-      - name: Install backend and acceptance test dependencies
-        run: |
-          python -m venv .ci-venv
-          .ci-venv/bin/python -m pip install -r requirements.txt 'pytest-bdd>=6.1.1,<9' pytest-cov pytest-timeout requests-mock
-      - name: Test the complete backend suite
-        run: timeout --signal=ABRT --kill-after=10s 120s .ci-venv/bin/python -X faulthandler -m pytest backend/tests tests/test_*.py --timeout=45 --timeout-method=thread -o faulthandler_timeout=30 --junitxml=reports/backend.xml
+      - name: Test the complete backend suite in an offline Linux container
+        run: bash scripts/test_backend_container.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
