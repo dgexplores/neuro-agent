@@ -2,15 +2,19 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
+import asyncio
+import sqlite3
+from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
+
+# Load configuration before importing modules that read JWT and provider settings.
+load_dotenv()
 
 from .models.patient import PatientCase, DiagnosisRequest, DiagnosisResponse
 from .agents.neuro_agent import NeuroAgent
 from .services.bedrock_service import BedrockService
 from .utils.auth import verify_token
-
-# Load environment variables
-load_dotenv()
+from .services.case_store import SQLiteCaseStore, get_case_store
 
 app = FastAPI(
     title="NeuroAgent API",
@@ -28,7 +32,7 @@ ALLOWED_ORIGINS_STR = os.getenv(
 )
 
 # Parse ALLOWED_ORIGINS - support both comma-separated and special patterns
-if ALLOWED_ORIGINS_STR == "*" or "vercel.app" in ALLOWED_ORIGINS_STR:
+if ALLOWED_ORIGINS_STR == "*":
     # For demo/production with dynamic Vercel URLs, allow all origins
     # In production, restrict this properly
     ALLOWED_ORIGINS = ["*"]
@@ -37,7 +41,7 @@ else:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,  # Must be False for wildcard origins
     allow_methods=["*"],  # Allow all methods including OPTIONS
     allow_headers=["*"],  # Allow all headers
@@ -57,7 +61,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "services": {"bedrock": "connected"}}
+    return {"status": "healthy", "services": {"bedrock": "not_checked"}}
 
 # Explicit OPTIONS handler for all routes to handle CORS preflight
 @app.options("/{full_path:path}")
@@ -67,7 +71,8 @@ async def options_handler(full_path: str):
 @app.post("/api/v1/diagnosis", response_model=DiagnosisResponse)
 async def create_diagnosis(
     request: DiagnosisRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    case_store: SQLiteCaseStore = Depends(get_case_store),
 ):
     """Create a new neurological diagnosis based on patient data"""
     try:
@@ -77,7 +82,7 @@ async def create_diagnosis(
         # Process diagnosis request
         result = await neuro_agent.analyze_case(request)
 
-        return DiagnosisResponse(
+        response = DiagnosisResponse(
             case_id=result["case_id"],
             diagnosis=result["diagnosis"],
             confidence=result["confidence"],
@@ -85,6 +90,10 @@ async def create_diagnosis(
             risk_factors=result["risk_factors"],
             next_steps=result["next_steps"]
         )
+        await asyncio.to_thread(case_store.save, user_id, response.model_dump(mode="json"))
+        return response
+    except (sqlite3.Error, BotoCoreError, ClientError):
+        raise HTTPException(status_code=503, detail="Case storage unavailable")
     except HTTPException:
         # Re-raise HTTP exceptions (like 400 for validation errors)
         raise
@@ -101,7 +110,7 @@ async def upload_medical_image(
         user_id = verify_token(credentials.credentials)
 
         # Validate file type
-        if not file.content_type.startswith('image/'):
+        if not file.content_type or not file.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="Invalid file type")
 
         # Process image
@@ -180,18 +189,22 @@ async def check_drug_interactions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/cases/{case_id}")
+@app.get("/api/v1/cases/{case_id}", response_model=DiagnosisResponse)
 async def get_case(
     case_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    case_store: SQLiteCaseStore = Depends(get_case_store),
 ):
-    """Retrieve a specific case by ID"""
+    """Retrieve a stored response belonging to the authenticated user."""
+    user_id = verify_token(credentials.credentials)
     try:
-        user_id = verify_token(credentials.credentials)
-        case = await neuro_agent.get_case(case_id)
-        return case
-    except Exception as e:
+        case = await asyncio.to_thread(case_store.get, user_id, case_id)
+    except (sqlite3.Error, BotoCoreError, ClientError):
+        raise HTTPException(status_code=503, detail="Case storage unavailable")
+    if case is None:
+        # Use the same response for unknown IDs and cases owned by other users.
         raise HTTPException(status_code=404, detail="Case not found")
+    return case
 
 # Lambda handler for AWS API Gateway
 from mangum import Mangum

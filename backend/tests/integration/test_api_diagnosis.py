@@ -167,7 +167,7 @@ def test_diagnosis_endpoint_requires_authentication(client, valid_diagnosis_payl
     # Request without authentication header
     response = client.post("/api/v1/diagnosis", json=valid_diagnosis_payload)
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert "detail" in response.json()
 
 
@@ -534,63 +534,32 @@ def test_diagnosis_endpoint_handles_invalid_json(
 # ============================================================================
 
 @patch('backend.main.verify_token')
-@patch('backend.main.neuro_agent.get_case')
-def test_get_case_endpoint_success(
-    mock_get_case,
-    mock_verify_token,
-    client,
-    mock_auth_token
-):
-    """Test GET /api/v1/cases/{case_id} returns case information"""
+def test_get_case_endpoint_success(mock_verify_token, client, mock_auth_token, case_store):
     mock_verify_token.return_value = "user123"
-
-    mock_get_case.return_value = {
-        "case_id": "test-case-123",
-        "status": "completed",
-        "created_at": datetime.now().isoformat()
+    response = {
+        "case_id": "test-case-123", "diagnosis": [], "confidence": 0.5,
+        "recommendations": [], "risk_factors": [], "next_steps": [],
+        "timestamp": "2026-01-01T00:00:00",
     }
-
-    response = client.get(
-        "/api/v1/cases/test-case-123",
-        headers={"Authorization": mock_auth_token}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["case_id"] == "test-case-123"
-    assert data["status"] == "completed"
+    case_store.save("user123", response)
+    result = client.get("/api/v1/cases/test-case-123", headers={"Authorization": mock_auth_token})
+    assert result.status_code == 200
+    assert result.json() == response
 
 
 @patch('backend.main.verify_token')
-@patch('backend.main.neuro_agent.get_case')
-def test_get_case_endpoint_not_found(
-    mock_get_case,
-    mock_verify_token,
-    client,
-    mock_auth_token
-):
-    """Test GET /api/v1/cases/{case_id} returns 404 for non-existent case"""
+def test_get_case_endpoint_not_found(mock_verify_token, client, mock_auth_token):
     mock_verify_token.return_value = "user123"
-
-    # Mock case not found
-    mock_get_case.side_effect = Exception("Case not found")
-
-    response = client.get(
-        "/api/v1/cases/non-existent-case",
-        headers={"Authorization": mock_auth_token}
-    )
-
+    response = client.get("/api/v1/cases/non-existent-case", headers={"Authorization": mock_auth_token})
     assert response.status_code == 404
-    data = response.json()
-    assert "detail" in data
-    assert data["detail"] == "Case not found"
+    assert response.json()["detail"] == "Case not found"
 
 
 def test_get_case_endpoint_requires_authentication(client):
     """Test GET /api/v1/cases/{case_id} requires authentication"""
     response = client.get("/api/v1/cases/test-case-123")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 # ============================================================================

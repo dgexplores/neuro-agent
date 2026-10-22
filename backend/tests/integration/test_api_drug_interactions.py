@@ -35,7 +35,7 @@ def test_drug_interaction_endpoint_requires_authentication(client):
 
     response = client.post("/api/v1/drug-interactions", json=payload)
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert "detail" in response.json()
 
 

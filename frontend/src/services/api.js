@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// 判断环境：Vercel 上使用生产 API，本地开发使用 localhost
-const isProduction = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL?.includes('localhost');
-const API_BASE_URL = isProduction
-  ? 'https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod'
-  : (process.env.REACT_APP_API_URL || 'http://localhost:8000');
+// Configure this application to use your own backend in every build mode.
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -18,10 +15,8 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    // JWT token - use environment variable or fallback to hardcoded demo token
-    // Generate new token: python generate_token.py
-    const token = process.env.REACT_APP_JWT_TOKEN ||
-      'REDACTED';
+    // Read the operator-supplied session token; no credential is bundled.
+    const token = sessionStorage.getItem('neuroagent_token');
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -55,10 +50,15 @@ export const submitDiagnosis = async (diagnosisRequest) => {
 
     // Re-throw error instead of returning mock data
     // This allows proper error handling in the UI
-    throw new Error(
-      `無法連接到診斷服務: ${error.response?.status || error.message}。` +
-      `請確保後端服務正在運行且配置正確。`
-    );
+    const status = error.response?.status;
+    const messages = {
+      401: 'Your session token is invalid or expired. Save a new token and retry.',
+      403: 'Save a bearer token in the API session panel before submitting.',
+      422: 'Check the required fields and numeric values, then retry.',
+      502: 'The model returned an invalid response. Please retry.',
+      503: 'The backend cannot reach its model or storage service. Check the backend configuration.'
+    };
+    throw new Error(messages[status] || 'Unable to reach the assessment service. Check your backend URL and connection.');
   }
 };
 
@@ -75,13 +75,8 @@ export const uploadMedicalImage = async (imageFile) => {
   return response.data;
 };
 
-export const getCaseHistory = async () => {
-  const response = await api.get('/api/v1/cases');
-  return response.data;
-};
-
 export const getCase = async (caseId) => {
-  const response = await api.get(`/api/v1/cases/${caseId}`);
+  const response = await api.get(`/api/v1/cases/${encodeURIComponent(caseId)}`);
   return response.data;
 };
 

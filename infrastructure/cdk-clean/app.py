@@ -1,155 +1,141 @@
 #!/usr/bin/env python3
+"""Canonical NeuroAgent AWS architecture. Synthesis is local; deployment is explicit."""
+from pathlib import Path
+from urllib.parse import urlsplit
+
 import aws_cdk as cdk
-from constructs import Construct
 from aws_cdk import (
-    Stack,
-    aws_lambda as _lambda,
-    aws_apigateway as apigw,
-    aws_dynamodb as dynamodb,
-    aws_s3 as s3,
-    aws_iam as iam,
-    Duration,
-    RemovalPolicy,
-    BundlingOptions
+    CfnOutput, CfnParameter, Duration, RemovalPolicy, Stack,
+    aws_apigateway as apigw, aws_dynamodb as dynamodb,
+    aws_iam as iam, aws_lambda as lambda_, aws_logs as logs, aws_s3 as s3,
+    aws_cloudfront as cloudfront, aws_cloudfront_origins as origins_,
 )
-import os
+from constructs import Construct
+
+ROOT = Path(__file__).resolve().parents[2]
+
 
 class NeuroAgentStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
+        # Supply using a local CloudFormation parameter file; never commit a value.
+        jwt_secret = CfnParameter(
+            self, 'JwtSecretKey', type='String', no_echo=True, min_length=32, max_length=128,
+            description='JWT signing secret, at least 32 characters. No default is provided.',
+        )
+        model = CfnParameter(
+            self, 'BedrockModelId', type='String',
+            default='anthropic.claude-3-sonnet-20240229-v1:0',
+            description='A supported direct Bedrock foundation model enabled in the deployment region.',
+        )
+        origins_value = self.node.try_get_context('allowed_origins') or 'http://localhost:3000'
+        origins = [origin.strip() for origin in origins_value.split(',') if origin.strip()]
+        for origin in origins:
+            parsed = urlsplit(origin)
+            if ('*' in origin or not parsed.hostname or parsed.username or parsed.password
+                    or parsed.path or parsed.query or parsed.fragment
+                    or not (parsed.scheme == 'https' or parsed.scheme == 'http' and parsed.hostname == 'localhost')):
+                raise ValueError('allowed_origins must contain explicit HTTPS or localhost HTTP origins, without paths or wildcards')
+        if not origins:
+            raise ValueError('At least one allowed origin is required')
 
-        # DynamoDB table for storing cases
-        cases_table = dynamodb.Table(
-            self, "CasesTable",
-            table_name="neuroagent-cases",
-            partition_key=dynamodb.Attribute(
-                name="case_id",
-                type=dynamodb.AttributeType.STRING
+        # Private S3 origin with HTTPS CDN and extensionless SPA routing.
+        frontend = s3.Bucket(
+            self, 'FrontendBucket', encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True, removal_policy=RemovalPolicy.RETAIN,
+        )
+        spa_router = cloudfront.Function(
+            self, 'SpaRouter', code=cloudfront.FunctionCode.from_inline(
+                "function handler(event) { var r = event.request; "
+                "if (r.uri === '/' || r.uri.split('/').pop().indexOf('.') === -1) "
+                "{ r.uri = '/index.html'; } return r; }"
             ),
+        )
+        distribution = cloudfront.Distribution(
+            self, 'FrontendDistribution', default_root_object='index.html',
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origins_.S3Origin(frontend),
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                response_headers_policy=cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+                function_associations=[cloudfront.FunctionAssociation(
+                    function=spa_router, event_type=cloudfront.FunctionEventType.VIEWER_REQUEST,
+                )],
+            ),
+        )
+        origins.append('https://' + distribution.distribution_domain_name)
+        CfnOutput(self, 'FrontendBucketName', value=frontend.bucket_name)
+        CfnOutput(self, 'FrontendURL', value='https://' + distribution.distribution_domain_name)
+        CfnOutput(self, 'FrontendDistributionId', value=distribution.distribution_id)
+
+        cases = dynamodb.Table(
+            self, 'CasesTable',
+            partition_key=dynamodb.Attribute(name='case_id', type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY
+            encryption=dynamodb.TableEncryption.AWS_MANAGED,
+            removal_policy=RemovalPolicy.RETAIN,
         )
-
-        # S3 bucket for medical images
-        images_bucket = s3.Bucket(
-            self, "ImagesBucket",
-            bucket_name=f"neuroagent-images-{self.account}-{self.region}",
-            removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True
+        images = s3.Bucket(
+            self, 'ImagesBucket', encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True, removal_policy=RemovalPolicy.RETAIN,
+            object_ownership=s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
         )
-
-        # IAM role for Lambda
-        lambda_role = iam.Role(
-            self, "LambdaExecutionRole",
-            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
-            ]
+        role = iam.Role(
+            self, 'LambdaExecutionRole', assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
+            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')],
         )
-
-        # Add Bedrock permissions (Phase 9-1: Scoped to specific agent)
-        bedrock_agent_id = self.node.try_get_context("bedrock_agent_id")
-        bedrock_agent_arn = f"arn:aws:bedrock:{self.region}:{self.account}:agent/*" if bedrock_agent_id else "*"
-
-        lambda_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel",
-                    "bedrock:InvokeAgent",
-                    "bedrock-agent-runtime:InvokeAgent",
-                    "bedrock:InvokeModelWithResponseStream"  # For streaming responses
-                ],
-                resources=[bedrock_agent_arn] if bedrock_agent_id else ["*"]
-            )
+        # The inspected application uses direct model invocation; it does not create AgentCore.
+        role.add_to_policy(iam.PolicyStatement(
+            actions=['bedrock:InvokeModel'],
+            resources=[self.format_arn(service='bedrock', account='', resource='foundation-model', resource_name=model.value_as_string)],
+        ))
+        cases.grant_read_write_data(role)
+        images.grant_read_write(role)
+        dependencies = lambda_.LayerVersion(
+            self, 'DependenciesLayer',
+            code=lambda_.Code.from_asset(str(ROOT / 'infrastructure' / 'cdk-clean' / 'build' / 'lambda_layer'), exclude=['*.pyc', '__pycache__']),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
+            compatible_architectures=[lambda_.Architecture.X86_64],
+            description='Build using infrastructure/cdk-clean/build_layer.sh for Linux x86_64 Python 3.11',
         )
-
-        # Grant DynamoDB permissions
-        cases_table.grant_read_write_data(lambda_role)
-
-        # Grant S3 permissions
-        images_bucket.grant_read_write(lambda_role)
-
-        # Create Lambda Layer for dependencies
-        # This avoids Docker bundling requirement
-        requirements_layer = _lambda.LayerVersion(
-            self, "DependenciesLayer",
-            code=_lambda.Code.from_asset(
-                "../../lambda_layer",  # We'll create this directory with dependencies
-                exclude=["*.pyc", "__pycache__"]
-            ),
-            compatible_runtimes=[_lambda.Runtime.PYTHON_3_11],
-            description="NeuroAgent Python dependencies"
-        )
-
-        # Lambda function
-        # Phase 9-1: Enhanced environment variables (using Lambda Layer for dependencies)
-        api_lambda = _lambda.Function(
-            self, "NeuroAgentAPI",
-            runtime=_lambda.Runtime.PYTHON_3_11,
-            handler="backend.main.handler",
-            code=_lambda.Code.from_asset(
-                "../../",
-                exclude=[
-                    "*.md", ".git", ".github", "node_modules", "frontend",
-                    "infrastructure", "tests", "docs", "data", "scripts",
-                    "*.pyc", "__pycache__", ".pytest_cache", ".env",
-                    "*.log", "*.spec.ts", "locustfile.py", ".venv", "venv",
-                    "cdk.out", "lambda_layer"
-                ]
-            ),
-            layers=[requirements_layer],
-            timeout=Duration.minutes(5),
-            memory_size=1024,
-            role=lambda_role,
+        api_function = lambda_.Function(
+            self, 'NeuroAgentAPI', runtime=lambda_.Runtime.PYTHON_3_11,
+            architecture=lambda_.Architecture.X86_64, handler='backend.main.handler',
+            code=lambda_.Code.from_asset(str(ROOT), exclude=[
+                '*.md', '.git', '.github', 'node_modules', 'frontend', 'infrastructure', 'tests',
+                'docs', 'data', 'scripts', '*.pyc', '__pycache__', '.pytest_cache', '.env', '.env.*',
+                '*.log', '*.spec.ts', 'locustfile.py', '.venv', 'venv', 'cdk.out', 'lambda_layer',
+                'archive', 'blog-posts', 'demo_video', 'hackathon_submission',
+            ]),
+            layers=[dependencies], timeout=Duration.seconds(28), memory_size=512,
+            role=role, log_retention=logs.RetentionDays.ONE_WEEK,
             environment={
-                # Storage
-                "DYNAMODB_TABLE_NAME": cases_table.table_name,
-                "S3_BUCKET_NAME": images_bucket.bucket_name,
-                # AWS_REGION is automatically provided by Lambda runtime
-
-                # Bedrock Configuration (Phase 9-1)
-                "BEDROCK_AGENTCORE_AGENT_ID": self.node.try_get_context("bedrock_agent_id") or "",
-                "BEDROCK_MODEL_ID": "anthropic.claude-3-sonnet-20240229-v1:0",
-
-                # Authentication & Security (Phase 8-2)
-                "JWT_SECRET_KEY": self.node.try_get_context("jwt_secret_key") or "",
-                "ALLOWED_ORIGINS": self.node.try_get_context("allowed_origins") or "https://neuroagent.example.com",
-                "ENV": "production",
-
-                # Caching Configuration (Phase 8-1)
-                "REDIS_ENABLED": self.node.try_get_context("redis_enabled") or "false",
-                "REDIS_HOST": self.node.try_get_context("redis_host") or "",
-                "REDIS_PORT": "6379",
-                "REDIS_DB": "0",
-            }
+                'DYNAMODB_TABLE_NAME': cases.table_name,
+                'CASE_STORE_BACKEND': 'dynamodb',
+                'S3_BUCKET_NAME': images.bucket_name,
+                'BEDROCK_MODEL_ID': model.value_as_string,
+                'JWT_SECRET_KEY': jwt_secret.value_as_string,
+                'ALLOWED_ORIGINS': ','.join(origins), 'ENV': 'production',
+                'REDIS_ENABLED': 'false',
+            },
         )
-
-        # API Gateway (Phase 9-1: Secure CORS configuration)
-        # Get allowed origins from context (should match ALLOWED_ORIGINS env var)
-        allowed_origins = self.node.try_get_context("allowed_origins")
-        cors_origins = allowed_origins.split(",") if allowed_origins else ["https://neuroagent.example.com"]
-
         api = apigw.LambdaRestApi(
-            self, "NeuroAgentAPIGateway",
-            handler=api_lambda,
-            proxy=True,  # ✅ Enable proxy mode for all FastAPI routes
+            self, 'NeuroAgentAPIGateway', handler=api_function, proxy=True,
+            binary_media_types=['multipart/form-data'],
+            deploy_options=apigw.StageOptions(throttling_rate_limit=2, throttling_burst_limit=5),
             default_cors_preflight_options=apigw.CorsOptions(
-                allow_origins=cors_origins,  # ✅ SECURITY: Specific origins only
-                allow_methods=["GET", "POST", "OPTIONS"],  # ✅ SECURITY: Only required methods
-                allow_headers=["Authorization", "Content-Type"],  # ✅ SECURITY: Specific headers
-                allow_credentials=True,
-                max_age=Duration.minutes(10)
-            )
+                allow_origins=origins, allow_methods=['GET', 'POST', 'OPTIONS'],
+                allow_headers=['Authorization', 'Content-Type'], allow_credentials=False,
+                max_age=Duration.minutes(10),
+            ),
         )
+        CfnOutput(self, 'APIGatewayURL', value=api.url)
+        CfnOutput(self, 'CasesTableName', value=cases.table_name)
+        CfnOutput(self, 'ImagesBucketName', value=images.bucket_name)
 
-        # Outputs
-        cdk.CfnOutput(
-            self, "APIGatewayURL",
-            value=api.url,
-            description="API Gateway URL"
-        )
 
-app = cdk.App()
-NeuroAgentStack(app, "NeuroAgentStack")
-app.synth()
+if __name__ == '__main__':
+    app = cdk.App()
+    NeuroAgentStack(app, 'NeuroAgentStack')
+    app.synth()

@@ -58,8 +58,13 @@ const DiagnosisPage = () => {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setResults(null);
 
     try {
+      const bp = formData.vitalSigns.bloodPressure.trim();
+      if (bp && !/^\d{2,3}\/\d{2,3}$/.test(bp)) {
+        throw new Error('Enter blood pressure as systolic/diastolic, for example 120/80.');
+      }
       const diagnosisRequest = {
         patient_info: {
           age: parseInt(formData.age),
@@ -74,12 +79,12 @@ const DiagnosisPage = () => {
           duration_days: 7,
           description: ''
         })).filter(s => s.name),
-        vital_signs: {
-          bp_systolic: formData.vitalSigns.bloodPressure ? parseInt(formData.vitalSigns.bloodPressure.split('/')[0]) : null,
-          bp_diastolic: formData.vitalSigns.bloodPressure ? parseInt(formData.vitalSigns.bloodPressure.split('/')[1]) : null,
-          heart_rate: formData.vitalSigns.heartRate ? parseInt(formData.vitalSigns.heartRate) : null,
-          temperature: formData.vitalSigns.temperature ? parseFloat(formData.vitalSigns.temperature) : null
-        },
+        vital_signs: Object.fromEntries(Object.entries({
+          bp_systolic: formData.vitalSigns.bloodPressure ? Number(formData.vitalSigns.bloodPressure.split('/')[0]) : null,
+          bp_diastolic: formData.vitalSigns.bloodPressure ? Number(formData.vitalSigns.bloodPressure.split('/')[1]) : null,
+          heart_rate: formData.vitalSigns.heartRate ? Number(formData.vitalSigns.heartRate) : null,
+          temperature: formData.vitalSigns.temperature ? Number(formData.vitalSigns.temperature) : null
+        }).filter(([, value]) => value !== null)),
         lab_results: {},
         imaging_studies: [],
         chief_complaint: formData.chiefComplaint,
@@ -90,7 +95,7 @@ const DiagnosisPage = () => {
       setResults(response);
     } catch (err) {
       // Provide more detailed error message for debugging
-      const errorMessage = err.message || '診斷分析時發生錯誤，請稍後再試';
+      const errorMessage = err.message || 'Assessment failed. Check your session and try again.';
       setError(errorMessage);
       console.error('Diagnosis error:', err);
     } finally {
@@ -101,7 +106,7 @@ const DiagnosisPage = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        神經疾病診斷分析
+        Educational assessment
       </Typography>
 
       <Card className="diagnosis-form">
@@ -111,8 +116,9 @@ const DiagnosisPage = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="年齡"
+                  label="Age"
                   type="number"
+                  inputProps={{ min: 0, max: 120, step: 1 }}
                   value={formData.age}
                   onChange={handleInputChange('age')}
                   required
@@ -121,14 +127,14 @@ const DiagnosisPage = () => {
 
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>性別</InputLabel>
-                  <Select
+                  <InputLabel id="gender-label">Gender</InputLabel>
+                  <Select labelId="gender-label" label="Gender"
                     value={formData.gender}
                     onChange={handleInputChange('gender')}
                   >
-                    <MenuItem value="male">男性</MenuItem>
-                    <MenuItem value="female">女性</MenuItem>
-                    <MenuItem value="other">其他</MenuItem>
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -136,53 +142,53 @@ const DiagnosisPage = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="主訴"
+                  label="Chief complaint"
                   multiline
                   rows={2}
                   value={formData.chiefComplaint}
                   onChange={handleInputChange('chiefComplaint')}
                   required
-                  helperText="請描述患者的主要症狀或不適"
+                  helperText="Describe the main symptoms using synthetic information."
                 />
               </Grid>
 
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="症狀描述"
+                  label="Symptoms"
                   multiline
                   rows={3}
                   value={formData.symptoms}
                   onChange={handleInputChange('symptoms')}
                   required
-                  helperText="請詳細描述症狀，以逗號分隔多個症狀"
+                  helperText="Separate symptoms with commas."
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="既往病史"
+                  label="Medical history"
                   value={formData.medicalHistory}
                   onChange={handleInputChange('medicalHistory')}
-                  helperText="以逗號分隔多個病史"
+                  helperText="Separate items with commas."
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="目前用藥"
+                  label="Current medications"
                   value={formData.currentMedications}
                   onChange={handleInputChange('currentMedications')}
-                  helperText="以逗號分隔多個藥物"
+                  helperText="Separate medication names with commas."
                 />
               </Grid>
 
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="血壓 (收縮壓/舒張壓)"
+                  label="Blood pressure (systolic/diastolic)"
                   placeholder="120/80"
                   value={formData.vitalSigns.bloodPressure}
                   onChange={handleInputChange('vitalSigns.bloodPressure')}
@@ -192,7 +198,7 @@ const DiagnosisPage = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="心率 (次/分)"
+                  label="Heart rate (bpm)"
                   type="number"
                   value={formData.vitalSigns.heartRate}
                   onChange={handleInputChange('vitalSigns.heartRate')}
@@ -202,9 +208,9 @@ const DiagnosisPage = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="體溫 (°C)"
+                  label="Temperature (°C)"
                   type="number"
-                  step="0.1"
+                  inputProps={{ step: 0.1 }}
                   value={formData.vitalSigns.temperature}
                   onChange={handleInputChange('vitalSigns.temperature')}
                 />
@@ -219,7 +225,7 @@ const DiagnosisPage = () => {
                     disabled={loading}
                     sx={{ minWidth: 200 }}
                   >
-                    {loading ? <CircularProgress size={24} /> : '開始診斷分析'}
+                    {loading ? <CircularProgress size={24} /> : 'Run assessment'}
                   </Button>
                 </Box>
               </Grid>

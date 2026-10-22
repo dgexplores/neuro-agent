@@ -1,5 +1,6 @@
 from typing import Dict, Any, List
 import json
+import math
 import uuid
 import logging
 from datetime import datetime
@@ -140,10 +141,11 @@ class NeuroAgent:
 
             return self._parse_agent_response(response)
 
-        except Exception as e:
-            logger.error(f"Error invoking Bedrock model: {e}")
-            # Fallback to rule-based diagnosis
-            return self._fallback_diagnosis(context)
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Assessment model invocation failed")
+            raise HTTPException(status_code=503, detail="Assessment model unavailable")
 
     def _build_diagnostic_prompt(self, context: Dict[str, Any]) -> str:
         """
@@ -198,26 +200,33 @@ RESPOND WITH ONLY VALID JSON, NO OTHER TEXT:
         return prompt
 
     def _parse_agent_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse and validate Bedrock agent response"""
-
+        """Validate structured output rather than manufacturing a fallback success."""
         try:
-            # Extract JSON from response
-            if "output" in response:
-                output_text = response["output"]["text"]
-                diagnosis_data = json.loads(output_text)
-
-                return {
-                    "diagnosis": diagnosis_data.get("differential_diagnoses", []),
-                    "confidence": self._calculate_overall_confidence(diagnosis_data),
-                    "recommendations": diagnosis_data.get("recommendations", []),
-                    "risk_factors": diagnosis_data.get("risk_factors", []),
-                    "next_steps": diagnosis_data.get("next_steps", [])
-                }
-        except (json.JSONDecodeError, KeyError):
-            pass
-
-        # Fallback parsing
-        return self._fallback_diagnosis_parsing(response)
+            data = json.loads(response["output"]["text"])
+            diagnoses = data["differential_diagnoses"]
+            if not isinstance(diagnoses, list) or not diagnoses:
+                raise ValueError("Missing diagnoses")
+            for item in diagnoses:
+                if (not isinstance(item, dict) or not isinstance(item.get("condition"), str)
+                    or isinstance(item.get("confidence"), bool)
+                    or not isinstance(item.get("confidence"), (int, float))
+                    or not math.isfinite(item["confidence"])
+                    or not 0 <= item["confidence"] <= 1):
+                    raise ValueError("Invalid diagnosis")
+            for name in ("recommendations", "risk_factors", "next_steps"):
+                if not isinstance(data.get(name, []), list) or not all(
+                    isinstance(value, str) for value in data.get(name, [])
+                ):
+                    raise ValueError("Invalid response list")
+            return {
+                "diagnosis": diagnoses,
+                "confidence": self._calculate_overall_confidence(data),
+                "recommendations": data.get("recommendations", []),
+                "risk_factors": data.get("risk_factors", []),
+                "next_steps": data.get("next_steps", []),
+            }
+        except (TypeError, ValueError, KeyError):
+            raise HTTPException(status_code=502, detail="Assessment model returned invalid output")
 
     def _fallback_diagnosis_parsing(self, response: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback parsing when JSON extraction fails"""
@@ -336,126 +345,40 @@ RESPOND WITH ONLY VALID JSON, NO OTHER TEXT:
         }
 
     async def analyze_image(self, image_file) -> Dict[str, Any]:
-        """
-        Analyze uploaded medical images (CT, MRI, X-ray)
-
-        Phase 7-2: Image Analysis Placeholder with SageMaker Integration Roadmap
-
-        Args:
-            image_file: Uploaded image file (UploadFile from FastAPI)
-
-        Returns:
-            Dict containing structured image analysis results with findings,
-            confidence scores, abnormalities, and recommendations
-
-        Future Enhancement Roadmap:
-            TODO: Integrate with AWS SageMaker for real AI-powered image analysis
-            TODO: Upload image to S3 bucket for persistent storage
-            TODO: Invoke SageMaker endpoint for medical image segmentation
-            TODO: Implement AWS Rekognition Medical for automated abnormality detection
-            TODO: Add DICOM format support for medical imaging standards
-            TODO: Integrate with radiological lexicon (RadLex) for standardized terminology
-        """
-
+        """Validate an image then request real educational model observations."""
+        import os
+        import asyncio
+        import boto3
+        from datetime import timezone
+        media_type = getattr(image_file, "content_type", None)
+        if media_type not in {"image/jpeg", "image/png"}:
+            raise HTTPException(status_code=415, detail="Only JPEG and PNG images are supported")
+        data = await image_file.read(3_750_001)
+        if len(data) > 3_750_000:
+            raise HTTPException(status_code=413, detail="Image exceeds 3.75 MB")
+        valid = ((media_type == "image/png" and data.startswith(b"\x89PNG\r\n\x1a\n"))
+                 or (media_type == "image/jpeg" and data.startswith(b"\xff\xd8\xff")))
+        if not valid:
+            raise HTTPException(status_code=400, detail="Image content does not match its media type")
+        analysis = await self.bedrock_service.analyze_image(data, media_type)
         image_id = str(uuid.uuid4())
-
-        # TODO: Phase 7-2.1 - AWS S3 Upload
-        # In production, upload to S3:
-        # s3_client = boto3.client('s3')
-        # s3_key = f"medical-images/{image_id}/{image_file.filename}"
-        # s3_client.upload_fileobj(image_file.file, BUCKET_NAME, s3_key)
-        # image_url = f"s3://{BUCKET_NAME}/{s3_key}"
-
-        # TODO: Phase 7-2.2 - SageMaker Inference
-        # Invoke SageMaker endpoint for image analysis:
-        # sagemaker_runtime = boto3.client('sagemaker-runtime')
-        # response = sagemaker_runtime.invoke_endpoint(
-        #     EndpointName='neuro-image-analysis-endpoint',
-        #     ContentType='application/x-image',
-        #     Body=image_file.file.read()
-        # )
-        # analysis_result = json.loads(response['Body'].read())
-
-        # TODO: Phase 7-2.3 - AWS Rekognition Medical
-        # Use Rekognition Medical for automated detection:
-        # rekognition = boto3.client('rekognition')
-        # response = rekognition.detect_medical_labels(
-        #     Image={'S3Object': {'Bucket': BUCKET_NAME, 'Name': s3_key}}
-        # )
-
-        # PLACEHOLDER: Structured fake response for MVP/testing
-        # This response format matches what the real SageMaker endpoint will return
-        fake_modality = "MRI"  # Could be CT, MRI, X-ray based on file metadata
-
+        storage_location = None
+        bucket = os.getenv("S3_BUCKET_NAME")
+        if bucket:
+            key = f"medical-images/{image_id}.{'png' if media_type == 'image/png' else 'jpg'}"
+            try:
+                client = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
+                await asyncio.to_thread(client.put_object, Bucket=bucket, Key=key, Body=data,
+                                        ContentType=media_type, ServerSideEncryption="AES256")
+                storage_location = f"s3://{bucket}/{key}"
+            except Exception:
+                raise HTTPException(status_code=503, detail="Image storage unavailable")
         return {
-            "image_id": image_id,
-            "status": "analyzed",
-            "timestamp": datetime.now().isoformat(),
-            "image_metadata": {
-                "filename": getattr(image_file, 'filename', 'unknown.jpg'),
-                "size_bytes": getattr(image_file, 'size', 0),
-                "content_type": getattr(image_file, 'content_type', 'image/jpeg'),
-                "modality": fake_modality,
-                "storage_location": f"s3://neuro-agent-images/{image_id}/placeholder.jpg"  # Placeholder
-            },
-            "analysis": {
-                "modality": fake_modality,
-                "anatomical_region": "Brain",
-                "view_position": "Axial",
-                "quality_score": 0.92,
-                "findings": [
-                    {
-                        "category": "Normal Anatomy",
-                        "description": "Brain parenchyma appears normal with no evidence of acute infarction",
-                        "confidence": 0.95,
-                        "location": "Bilateral cerebral hemispheres",
-                        "severity": "none"
-                    },
-                    {
-                        "category": "Vascular",
-                        "description": "Normal caliber of major intracranial vessels",
-                        "confidence": 0.88,
-                        "location": "Circle of Willis",
-                        "severity": "none"
-                    },
-                    {
-                        "category": "Ventricles",
-                        "description": "Ventricular system is normal in size and configuration",
-                        "confidence": 0.93,
-                        "location": "Lateral ventricles",
-                        "severity": "none"
-                    }
-                ],
-                "abnormalities_detected": [],  # Empty for normal scan
-                "key_measurements": {
-                    "midline_shift_mm": 0.0,
-                    "ventricular_size": "normal",
-                    "brain_volume_ml": 1400
-                },
-                "impression": "No acute intracranial abnormality detected. Normal brain MRI.",
-                "confidence_score": 0.91
-            },
-            "recommendations": [
-                "Professional radiological interpretation recommended for clinical decision-making",
-                "Correlate with clinical findings and patient symptoms",
-                "Consider follow-up imaging if symptoms persist or worsen",
-                "AI analysis should be used as decision support, not definitive diagnosis"
-            ],
-            "disclaimer": "This is an AI-generated analysis for educational and demonstration purposes. All medical images must be reviewed by a qualified radiologist for clinical use.",
-            "processing_metadata": {
-                "model_version": "placeholder-v1.0",
-                "processing_time_ms": 250,  # Simulated processing time
-                "sagemaker_endpoint": "neuro-image-analysis-endpoint-placeholder",
-                "ai_confidence": 0.91
-            }
-        }
-
-    async def get_case(self, case_id: str) -> Dict[str, Any]:
-        """Retrieve case information"""
-
-        # In a real implementation, this would query DynamoDB
-        return {
-            "case_id": case_id,
-            "status": "completed",
-            "created_at": datetime.now().isoformat()
+            "image_id": image_id, "status": "analyzed",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "image_metadata": {"filename": image_file.filename, "size_bytes": len(data),
+                               "content_type": media_type, "storage_location": storage_location},
+            "analysis": analysis,
+            "disclaimer": "Educational observations only; qualified professional review required.",
+            "processing_metadata": {"model_id": self.bedrock_service.model_id}
         }

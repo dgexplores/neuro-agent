@@ -27,9 +27,9 @@ const DiagnosisResults = ({ results }) => {
   };
 
   const getConfidenceText = (confidence) => {
-    if (confidence >= 0.8) return '高';
-    if (confidence >= 0.6) return '中';
-    return '低';
+    if (confidence >= 0.8) return 'High';
+    if (confidence >= 0.6) return 'Medium';
+    return 'Low';
   };
 
   return (
@@ -37,17 +37,17 @@ const DiagnosisResults = ({ results }) => {
       <CardContent>
         <Typography variant="h5" gutterBottom color="primary">
           <Assessment sx={{ mr: 1, verticalAlign: 'middle' }} />
-          診斷分析結果
+          Assessment results
         </Typography>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          病例編號: {results.case_id}
+          Case ID: {results.case_id}
         </Typography>
 
         {/* Overall Confidence */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" gutterBottom>
-            整體可信度: {getConfidenceText(results.confidence)}
+            Model-reported confidence: {getConfidenceText(results.confidence)}
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -65,7 +65,7 @@ const DiagnosisResults = ({ results }) => {
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               <Assessment sx={{ mr: 1, verticalAlign: 'middle' }} />
-              鑑別診斷
+              Possible conditions
             </Typography>
             <List>
               {results.diagnosis.map((diagnosis, index) => (
@@ -94,7 +94,7 @@ const DiagnosisResults = ({ results }) => {
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               <Lightbulb sx={{ mr: 1, verticalAlign: 'middle' }} />
-              建議
+              Recommendations
             </Typography>
             <List dense>
               {results.recommendations.map((recommendation, index) => (
@@ -109,7 +109,7 @@ const DiagnosisResults = ({ results }) => {
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               <Warning sx={{ mr: 1, verticalAlign: 'middle' }} />
-              風險因子
+              Risk factors
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {results.risk_factors.map((risk, index) => (
@@ -128,7 +128,7 @@ const DiagnosisResults = ({ results }) => {
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               <NavigateNext sx={{ mr: 1, verticalAlign: 'middle' }} />
-              後續步驟
+              Next steps
             </Typography>
             <List dense>
               {results.next_steps.map((step, index) => (
@@ -143,7 +143,7 @@ const DiagnosisResults = ({ results }) => {
         <Divider sx={{ my: 3 }} />
 
         <Typography variant="body2" color="text.secondary" align="center">
-          ⚠️ 此診斷分析僅供參考，實際診療請務必諮詢專業醫師
+          Educational model output only. This is not medical advice or a clinically validated assessment.
         </Typography>
       </CardContent>
     </Card>

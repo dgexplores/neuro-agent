@@ -1,415 +1,118 @@
-# NeuroAgent - AI-Driven Neurological Diagnosis Assistant
+# NeuroAgent — Technical Setup and Verification
 
-[![Tests](https://img.shields.io/badge/tests-94%2F94%20passing-brightgreen)](./docs/FINAL_ACCEPTANCE_REPORT.md)
-[![Deployment](https://img.shields.io/badge/deployment-AWS%20Live-brightgreen)](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
-[![Security](https://img.shields.io/badge/security-0%20high%20vulnerabilities-brightgreen)](./docs/FINAL_ACCEPTANCE_REPORT.md)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![AWS](https://img.shields.io/badge/AWS-Bedrock%20%7C%20Lambda%20%7C%20CDK-orange)](./infrastructure/cdk/)
-[![License](https://img.shields.io/badge/license-Educational-blue)](./LICENSE)
+A Python/FastAPI assessment application extending [thc1006/neuro-agent](https://github.com/thc1006/neuro-agent). Original source history and attribution are retained. This copy adds persistent case responses, authenticated retrieval, provider error handling, real image-model requests, frontend session configuration, and automated delivery checks.
 
-> An enterprise-grade AI-powered neurological diagnosis assistant built on AWS Bedrock for the AWS AI Agent Global Hackathon 2025.
+**Current status:** local automated verification is recorded in [technical evidence](docs/IMPLEMENTATION_EVIDENCE.md). The application has not been deployed or tested against live AWS services in this adaptation. Recruiter-oriented documentation is deferred until deployment is verified. No AWS requests were made during the automated checks described here.
 
-**Production Status**: Live and Operational | **Test Coverage**: 100% (94/94 tests passing) | **Security**: 0 High-Severity Vulnerabilities
+Use synthetic inputs only. This is an educational application, not a clinically validated diagnosis system.
 
----
+## Architecture and endpoint contracts
 
-## Key Features
+```text
+React → REST API / FastAPI → JWT + input validation → NeuroAgent → AWS Bedrock
+                                     ↓
+                       SQLite (local) / DynamoDB (cloud)
 
-- **AI-Powered Diagnosis**: Multi-modal analysis using AWS Bedrock (Claude 3 Sonnet) integrating patient symptoms, medical history, vital signs, and imaging data
-- **Differential Diagnosis**: Top 3 diagnoses with confidence scores (capped at 85% to require clinical validation)
-- **Drug Interaction Checking**: Real-time safety checks for 14 common neurological medications
-- **Redis Caching**: 60-70% cache hit rate achieving 65% cost savings with p95 latency < 2s
-- **Medical Compliance**: HIPAA-aware design with patient data anonymization, 90-day auto-expiry, and audit trails
-- **Security Hardening**: 16-layer prompt injection defense, JWT authentication with 7-layer validation, strict CORS policies
-- **Production-Ready**: Blue/Green deployment, load tested for 100+ concurrent users, zero-downtime deployments
-- **Cost Optimized**: Estimated $82/month operational cost with caching enabled
-
----
-
-## Quick Start
-
-### Try the Live API
-
-#### Health Check (No authentication required)
-```bash
-curl https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/health
+Image upload → signature and size checks → Claude image request → optional S3 storage
 ```
 
-Expected response: `{"status":"healthy","services":{"bedrock":"connected"}}`
+The preserved cloud architecture is API Gateway → Lambda → Bedrock, DynamoDB, and S3. The canonical [CDK project](infrastructure/cdk-clean/) defines cloud infrastructure. SQLite is the local alternative; Lambda replicas use DynamoDB.
 
-#### API Documentation
-Visit: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/docs
+| Method | Endpoint | Behavior |
+|---|---|---|
+| GET | `/` | Application information |
+| GET | `/health` | Liveness only; Bedrock connectivity is explicitly not checked |
+| POST | `/api/v1/diagnosis` | Validate, invoke model, validate response, persist response for authenticated owner |
+| GET | `/api/v1/cases/{case_id}` | Retrieve the owner's saved response; other-owner and absent IDs both return 404 |
+| POST | `/api/v1/drug-interactions` | Existing local medication-knowledge lookup |
+| POST | `/api/v1/upload-image` | Real multimodal request for supported Claude models; optional S3 upload |
 
-#### Test Diagnosis Endpoint
+The image adapter accepts JPEG/PNG signatures up to 3.75 MB. It does not implement DICOM or clinical image validation. Unsupported model families return 501; provider failures return 503; image findings are never fabricated. Text-model failure returns 503 and malformed assessment JSON returns 502. A successful assessment is not returned if saving its response fails.
 
-Generate a JWT token:
-```python
-import jwt
-import datetime
+## Quick start
 
-payload = {
-    'user_id': 'demo-physician',
-    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-}
-token = jwt.encode(payload, 'REDACTED', algorithm='HS256')
-print(f"Bearer {token}")
-```
+Install Python 3.11, Node 22.22.2+ (supported release) and Make. From the cloned
+repository, `make install` creates the environment and installs backend/frontend
+dependencies. Configure `.env` as below, then run `make api` and `make web` in
+separate terminals. Open `http://localhost:3000`. Run `make test` for both suites.
+Model-backed assessment requires your own enabled AWS Bedrock account and can
+incur charges; setup and offline tests do not invoke it.
 
-Test the diagnosis API:
-```bash
-curl -X POST https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/api/v1/diagnosis \
-  -H "Authorization: Bearer REDACTED" \
-  -H "Content-Type: application/json" \
-  -d @data/demo_cases.json
-```
+## Local configuration
 
-**Demo Cases**: 6 realistic neurological cases from peer-reviewed medical literature available in [data/demo_cases.json](./data/demo_cases.json)
-
-### Local Development
+Use Python 3.11 and run from the repository root:
 
 ```bash
-# Clone repository
-git clone https://github.com/thc1006/neuro-agent.git
-cd neuro-agent
-
-# Setup Python environment
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-
-# Configure environment
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your AWS credentials and settings
+```
 
-# Start backend (Terminal 1)
-cd backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+Set a generated private `JWT_SECRET_KEY`, AWS region, and model ID in `.env`. Prefer the AWS credential provider chain over copying credentials into files. Configuration is loaded before authentication settings. `CASE_STORE_BACKEND=sqlite` uses `CASE_DB_PATH` (default `data/cases.sqlite3`); cloud mode requires `CASE_STORE_BACKEND=dynamodb` and `DYNAMODB_TABLE_NAME`. `S3_BUCKET_NAME` enables encrypted image upload after analysis.
 
-# Start frontend (Terminal 2)
+For a private local demonstration, generate a signing secret with `python -c 'import secrets; print(secrets.token_urlsafe(48))'` and save it only in the backend `.env`. Start the API:
+
+```bash
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+The API starts without initializing AWS clients. Actual model requests require valid AWS permissions/model access and can incur charges; they were not executed for this adaptation. Local API docs are at `http://127.0.0.1:8000/docs`.
+
+Generate a short-lived local demonstration token in a second activated terminal:
+
+```bash
+python -c 'from dotenv import load_dotenv; load_dotenv(); from backend.utils.auth import create_access_token; print(create_access_token("local-demo", "local-demo"))'
+```
+
+This is a local operator helper, not a user registration/login service. Use the bearer token in Swagger or the frontend session panel. Never paste the signing secret or AWS keys into the frontend.
+
+## Frontend
+
+Create `frontend/.env.local` containing `REACT_APP_API_URL=http://localhost:8000`, then run:
+
+```bash
 cd frontend
-npm install
+npm ci
 npm start
-
-# Run tests
-pytest tests/ -v
 ```
 
----
+The API client honors `REACT_APP_API_URL` in every build mode. There is no inherited hosted API or hardcoded token fallback. The session panel stores a bearer token in this tab's `sessionStorage`; clear it when finished. The case page retrieves an actual saved case by ID rather than displaying hardcoded records.
 
-## Demo Video
+## Automated checks
 
-**AWS AI Agent Global Hackathon 2025 - 3-Minute Demo**
-
-- **File**: `demo_video/output/NeuroAgent_Demo_Final.mp4` (14 MB, 3 min 28 sec)
-- **Resolution**: 1920x1080 Full HD, 30 fps
-- **Content**: Complete end-to-end diagnosis demo, frontend interface, GitHub repository, security testing, system architecture
-- **Narration**: Amazon Polly Neural TTS (Joanna voice)
-- **Production**: Playwright automation + FFmpeg GPU acceleration (NVIDIA NVENC)
-
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Frontend (React)                          │
-│              Vercel / localhost:3000                         │
-└──────────────────────┬───────────────────────────────────────┘
-                       │ HTTPS
-┌──────────────────────▼───────────────────────────────────────┐
-│              API Gateway (REST API)                          │
-│       /api/v1/diagnosis, /api/v1/upload-image               │
-└──────────────────────┬───────────────────────────────────────┘
-                       │
-┌──────────────────────▼───────────────────────────────────────┐
-│           Lambda Function (FastAPI)                          │
-│      Python 3.11 | 1024MB RAM | 5min timeout                │
-│                                                              │
-│  ┌──────────────┐  ┌────────────────┐  ┌─────────────────┐ │
-│  │  NeuroAgent  │  │ BedrockService │  │  Auth/Cache     │ │
-│  │  (Diagnosis) │  │ (AI Integration)│  │  (Security)     │ │
-│  └──────────────┘  └────────────────┘  └─────────────────┘ │
-└──────────────┬──────────────┬──────────────┬────────────────┘
-               │              │              │
-      ┌────────▼────┐  ┌──────▼─────┐  ┌────▼────────┐
-      │  DynamoDB   │  │AWS Bedrock │  │ElastiCache  │
-      │(Case Store) │  │AgentCore/AI│  │   (Redis)   │
-      └─────────────┘  └────────────┘  └─────────────┘
-```
-
----
-
-## Technology Stack
-
-**Backend**
-- FastAPI (Python 3.11) - REST API framework
-- Mangum (0.17.0) - ASGI-to-Lambda adapter
-- AWS Bedrock - Claude 3 Sonnet AI model
-- Pydantic - Data validation
-- Redis - Caching layer
-
-**Frontend**
-- React 18 - UI framework
-- Material-UI (MUI) - Component library
-- Axios - HTTP client
-
-**Infrastructure**
-- AWS Lambda - Serverless compute
-- Amazon API Gateway - API management
-- Amazon DynamoDB - NoSQL database
-- Amazon S3 - Object storage
-- Amazon ElastiCache - Redis caching
-- AWS CDK (Python) - Infrastructure as Code
-- AWS CloudWatch - Monitoring and logging
-
----
-
-## Testing
-
-### Run All Tests
-```bash
-pytest tests/ -v --cov=backend --cov-report=html
-```
-
-**Test Results**: 94/94 passing (100%)
-- **Unit Tests**: 38/38 (drug interactions, input validation, medical knowledge)
-- **Integration Tests**: 56/56 (API endpoints, end-to-end workflows)
-
-### Load Testing
-```bash
-locust -f tests/load/locustfile.py \
-  --host=https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod \
-  --users=100 --spawn-rate=10
-```
-
----
-
-## AWS Deployment
-
-### Quick Deployment
+Install acceptance-test dependencies with `python -m pip install 'pytest-bdd>=6.1.1,<9' pytest-cov pytest-timeout requests-mock`, then run:
 
 ```bash
-# Configure AWS CLI
-aws configure
-
-# Bootstrap CDK (one-time)
-cd infrastructure/cdk-clean
-cdk bootstrap aws://ACCOUNT-ID/us-east-1
-
-# Deploy infrastructure
-cdk synth  # Generate CloudFormation template
-cdk diff   # View changes
-cdk deploy NeuroAgentStack
-
-# Verify deployment
-curl https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/health
+python -m pytest backend/tests tests/test_*.py -q
 ```
 
-### Deployment Resources
+Verified on Python 3.11: **115 tests passed**, including live local SQLite operations, HTTP endpoint contracts, three executable BDD scenarios, and offline Bedrock/DynamoDB/S3 SDK stubs. This does not measure medical accuracy or confirm AWS deployment. Frontend, container, and infrastructure verification is tracked in the [CI/CD guide](docs/CI_CD.md) and [infrastructure evidence](docs/INFRASTRUCTURE_EVIDENCE.md).
 
-For detailed deployment instructions, refer to:
-- **[AWS Integration Handoff](./docs/AWS_INTEGRATION_HANDOFF.md)** - Complete integration guide (2000+ lines)
-- **[CDK Deployment Guide](./infrastructure/cdk/README.md)** - Detailed CDK deployment steps
+## Browser routes and hosting
 
----
+`/` is the overview, `/diagnosis` opens the assessment form, and `/history`
+looks up a saved case. `/cases` redirects to `/history`; unknown URLs show a
+page-not-found message with a home link. Optional vital signs can be left blank.
+The form and service errors use English guidance. The API URL is configured
+through `frontend/.env.local` locally or `REACT_APP_API_URL` during a cloud build.
 
-## API Documentation
+The AWS CDK stack now also defines a private S3 frontend origin and HTTPS
+CloudFront distribution. Its viewer-request function rewrites extensionless
+SPA routes to `index.html`, so direct links and refreshes work; asset paths
+retain normal file lookup. The generated frontend HTTPS origin is allowed by
+the API's CORS configuration. No cloud resources are created by local synthesis.
+See [release checklist](docs/DEPLOYMENT_READINESS.md) for the remaining account
+configuration and manual deployment steps.
 
-### Main Endpoints
+## Changes and remaining boundaries
 
-#### Health Check
-```http
-GET /health
-```
-Response: `{"status": "healthy", "services": {"bedrock": "connected"}}`
+See [implementation evidence](docs/IMPLEMENTATION_EVIDENCE.md) and the [contribution record](PORTFOLIO.md). Upstream non-executable BDD specifications are preserved in [archive/upstream_acceptance](archive/upstream_acceptance/); they were replaced by actual source-application acceptance contracts, not reported as passing clinical or SLA tests.
 
-#### Neurological Diagnosis
-```http
-POST /api/v1/diagnosis
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
+Remaining boundaries include live cloud verification, clinical validation, shared token revocation, production identity management, and data retention policy. SQLite files and S3 images in this demo are not an approved patient-record system. Runtime Python and frontend audits are currently clean; see [dependency review](docs/DEPENDENCY_REVIEW.md).
 
-{
-  "patient_info": {
-    "age": 67,
-    "gender": "male",
-    "medical_history": ["hypertension"],
-    "current_medications": ["amlodipine"]
-  },
-  "symptoms": [
-    {
-      "name": "headache",
-      "severity": "severe",
-      "duration_days": 3
-    }
-  ],
-  "vital_signs": {
-    "bp_systolic": 165,
-    "bp_diastolic": 95
-  }
-}
-```
+## Attribution and licensing
 
-#### Medical Image Upload
-```http
-POST /api/v1/upload-image
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: multipart/form-data
+Original project: [thc1006/neuro-agent](https://github.com/thc1006/neuro-agent), created for the AWS AI Agent Global Hackathon 2025. Original awards, deployments, benchmarks, and participation belong to their authors.
 
-file: brain_mri.jpg
-```
-
-#### Drug Interaction Check
-```http
-POST /api/v1/drug-interactions
-Authorization: Bearer <JWT_TOKEN>
-
-{
-  "medications": ["warfarin", "aspirin", "levodopa"]
-}
-```
-
-**Full API Documentation**: https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/docs
-
----
-
-## Security
-
-### Security Features
-
-- **Prompt Injection Protection**: 16 dangerous pattern detection
-- **JWT Authentication**: 7-layer security validation with algorithm whitelist
-- **CORS Protection**: Specific origin whitelist, no wildcard origins
-- **Input Sanitization**: All user inputs validated before AI processing
-- **No Secrets in Git**: Environment variable management
-- **HIPAA-Aware**: Data encryption in transit and at rest, 90-day auto-expiry
-
-### Security Checklist
-- ✅ 0 High-severity vulnerabilities
-- ✅ All endpoints authenticated (except public /health)
-- ✅ Input validation and sanitization
-- ✅ No secrets in Git
-- ✅ Data encryption (in transit and at rest)
-
----
-
-## Cost Estimation
-
-### Monthly Cost (100,000 requests/month)
-
-| Service | Monthly Cost |
-|---------|--------------|
-| AWS Lambda | $8.40 |
-| API Gateway | $0.35 |
-| DynamoDB | $2.75 |
-| S3 | $1.15 |
-| AWS Bedrock (Claude 3 Sonnet) | $120.00 |
-| ElastiCache Redis | $12.41 |
-| CloudWatch | $5.00 |
-| Data Transfer | $4.50 |
-| **Total (without caching)** | **~$154/month** |
-| **Total (with caching)** | **~$82/month** |
-
-**Cost Optimization**: Redis caching reduces 60% of Bedrock calls, saving $72/month (65% cost reduction).
-
----
-
-## Documentation
-
-### Core Documentation
-- **[CLAUDE.md](./CLAUDE.md)** - Project overview and development guide
-- **[Demo Script](./DEMO_SCRIPT.md)** - 3-minute Hackathon presentation
-- **[Hackathon Submission](./HACKATHON_SUBMISSION.md)** - Complete submission materials
-- **[Final Acceptance Report](./docs/FINAL_ACCEPTANCE_REPORT.md)** - Acceptance testing report
-
-### Technical Documentation
-- **[AWS Integration Handoff](./docs/AWS_INTEGRATION_HANDOFF.md)** - Complete AWS integration guide
-- **[Database Schema](./docs/DATABASE_SCHEMA.md)** - Database structure
-- **[Architecture UML](./archive/planning_docs/ARCHITECTURE_UML.md)** - UML diagrams
-
----
-
-## Roadmap
-
-### ✅ Completed (100%)
-- [x] AI Diagnosis Engine (Phase 1-6)
-- [x] Medical Image Analysis (Phase 7-2)
-- [x] Load Testing & Caching (Phase 8-1)
-- [x] Security Hardening (Phase 8-2)
-- [x] CDK Deployment (Phase 9-1)
-- [x] Blue/Green Deployment (Phase 9-2)
-- [x] Demo & Documentation (Phase 10)
-- [x] All 94 tests passing (100%)
-- [x] AWS Live Deployment
-
-### Future Enhancements
-- [ ] CloudFront distribution for frontend
-- [ ] Real-time streaming diagnosis
-- [ ] SageMaker medical image segmentation
-- [ ] Multi-language support (English UI)
-- [ ] Mobile app (React Native)
-
----
-
-## Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-**Development Guidelines**: Follow PEP 8 (Python) and ESLint (JavaScript), write tests for new features, ensure all tests pass.
-
----
-
-## License
-
-This project is for **educational and demonstration purposes only**.
-
-**Important Disclaimers**:
-- ⚠️ This system is designed for educational and demonstration purposes
-- ⚠️ All diagnostic suggestions require professional medical review
-- ⚠️ Not intended for direct patient care without physician supervision
-- ⚠️ Complies with AWS AI/ML responsible use guidelines
-
-See [LICENSE](./LICENSE) file for details.
-
----
-
-## Acknowledgments
-
-### AWS AI Agent Global Hackathon 2025
-This project was developed for the AWS AI Agent Global Hackathon 2025.
-
-### Technology Stack
-- **AWS Bedrock** - AI models and AgentCore framework
-- **FastAPI** - High-performance Python web framework
-- **React & Material-UI** - Modern frontend stack
-- **AWS CDK** - Infrastructure as Code
-
----
-
-## Contact
-
-- **GitHub**: [@thc1006](https://github.com/thc1006)
-- **Repository**: [neuro-agent](https://github.com/thc1006/neuro-agent)
-- **Issues**: [GitHub Issues](https://github.com/thc1006/neuro-agent/issues)
-
----
-
-<div align="center">
-
-**Built with ❤️ for Healthcare AI**
-
-[Report Bug](https://github.com/thc1006/neuro-agent/issues) ·
-[Request Feature](https://github.com/thc1006/neuro-agent/issues) ·
-[View Documentation](./docs/AWS_INTEGRATION_HANDOFF.md) ·
-[Live Demo](https://1w80v6fnw1.execute-api.us-east-1.amazonaws.com/prod/)
-
-© 2025 NeuroAgent Project. All rights reserved.
-
-</div>
+Upstream licensing metadata is inconsistent: `pyproject.toml` says MIT, the original README described educational use, and this clone has no root LICENSE. This adaptation does not assign a new license.

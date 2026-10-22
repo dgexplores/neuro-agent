@@ -1,22 +1,18 @@
-.PHONY: lock-claude unlock-claude verify-claude
-
-lock-claude:
-	@if command -v sha256sum >/dev/null 2>&1; then \
-		sha256sum CLAUDE.md > CLAUDE.md.sha256; \
-	else \
-		shasum -a 256 CLAUDE.md > CLAUDE.md.sha256; \
-	fi
-	@echo "✅ 已更新 CLAUDE.md.sha256（視為鎖定目標文件）。"
-
-unlock-claude:
-	@rm -f CLAUDE.md.sha256
-	@echo "⚠️ 已移除校驗檔（暫時解除鎖），記得修改完再 make lock-claude。"
-
-verify-claude:
-	@if command -v sha256sum >/dev/null 2>&1; then \
-		HASH=$$(sha256sum CLAUDE.md | awk '{print $$1}'); \
-	else \
-		HASH=$$(shasum -a 256 CLAUDE.md | awk '{print $$1}'); \
-	fi; \
-	REF=$$(awk '{print $$1}' CLAUDE.md.sha256); \
-	if [ "$$HASH" = "$$REF" ]; then echo "✅ 校驗通過"; else echo "❌ 校驗失敗" && exit 1; fi
+PYTHON ?= python3.11
+VENV := .venv/bin
+.PHONY: install test backend-test frontend-test api web build
+install:
+	$(PYTHON) -m venv .venv
+	$(VENV)/python -m pip install -r requirements.txt 'pytest-bdd>=6.1.1,<9' pytest-cov pytest-timeout requests-mock
+	cd frontend && npm ci
+backend-test:
+	AWS_EC2_METADATA_DISABLED=true $(VENV)/python -m pytest backend/tests tests/test_*.py -q
+frontend-test:
+	cd frontend && npm run test:ci
+test: backend-test frontend-test
+api:
+	$(VENV)/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+web:
+	cd frontend && npm start
+build:
+	cd frontend && npm run build

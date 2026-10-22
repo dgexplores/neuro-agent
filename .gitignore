@@ -65,3 +65,7 @@ test_*.html
 PROJECT_CLEANUP_REPORT.md
 
 .vercel
+
+# Local verification output
+reports/
+reports-full-tests.txt

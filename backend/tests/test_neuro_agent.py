@@ -6,7 +6,7 @@ from backend.models.patient import DiagnosisRequest, PatientInfo, Symptom, Gende
 @pytest.fixture
 def mock_bedrock_service():
     service = Mock()
-    service.invoke_agent = AsyncMock(return_value={
+    service.invoke_model_direct = AsyncMock(return_value={
         "output": {"text": '{"differential_diagnoses": [{"condition": "test", "confidence": 0.8}]}'}
     })
     return service

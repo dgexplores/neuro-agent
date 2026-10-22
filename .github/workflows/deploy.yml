@@ -1,0 +1,82 @@
+name: Deploy verified NeuroAgent Lambda
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      FUNCTION: ${{ vars.LAMBDA_FUNCTION_NAME }}
+      FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
+      ARTIFACT_BUCKET: ${{ vars.LAMBDA_ARTIFACT_BUCKET }}
+      REACT_APP_API_URL: ${{ vars.PUBLIC_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require configured account and credits
+        env:
+          ROLE: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          ENABLED: ${{ vars.CLOUD_DEPLOYMENT_ENABLED }}
+        run: |
+          set -euo pipefail
+          test "$ENABLED" = true || { echo 'Cloud deployment disabled pending account and credit approval'; exit 1; }
+          for name in AWS_REGION FUNCTION FRONTEND_BUCKET ARTIFACT_BUCKET REACT_APP_API_URL ROLE; do
+            test -n "${!name}" || { echo "Missing environment variable: $name"; exit 1; }
+          done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Package Lambda dependencies for its actual runtime
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/function
+          python -m pip install -r requirements-lambda.txt --target /tmp/function --platform manylinux2014_x86_64 --implementation cp --python-version 3.11 --only-binary=:all:
+          cp -R backend data /tmp/function/
+          find /tmp/function -type d -name __pycache__ -prune -exec rm -rf {} +
+          cd /tmp/function
+          zip -qr /tmp/function.zip .
+      - name: Update existing Lambda code and publish revision
+        run: |
+          set -euo pipefail
+          runtime=$(aws lambda get-function-configuration --function-name "$FUNCTION" --query Runtime --output text)
+          arch=$(aws lambda get-function-configuration --function-name "$FUNCTION" --query 'Architectures[0]' --output text)
+          test "$runtime" = python3.11 && test "$arch" = x86_64
+          key="neuroagent/$GITHUB_SHA/function.zip"
+          aws s3 cp /tmp/function.zip "s3://$ARTIFACT_BUCKET/$key"
+          aws lambda update-function-code --function-name "$FUNCTION" --s3-bucket "$ARTIFACT_BUCKET" --s3-key "$key" --publish --query '{Function:FunctionName,Version:Version}'
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build frontend for configured API
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Upload frontend without deleting unrelated bucket contents
+        run: aws s3 sync frontend/build/ "s3://$FRONTEND_BUCKET/" --cache-control no-cache
+      - name: Refresh configured CloudFront distribution
+        env:
+          DISTRIBUTION: ${{ vars.FRONTEND_DISTRIBUTION_ID }}
+        run: |
+          if [ -n "$DISTRIBUTION" ]; then
+            aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/*'
+          fi

@@ -10,7 +10,7 @@ Phase 8-2: Security Hardening
 
 import jwt
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import HTTPException, status
 import logging
@@ -132,7 +132,7 @@ def verify_token(token: str) -> str:
 
         # ✅ SECURITY: Validate issued-at is not in the future
         iat = payload.get("iat")
-        if iat and datetime.fromtimestamp(iat) > datetime.utcnow():
+        if iat and datetime.fromtimestamp(iat, timezone.utc) > datetime.now(timezone.utc):
             logger.warning("Token issued in the future")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -141,6 +141,8 @@ def verify_token(token: str) -> str:
 
         return user_id
 
+    except HTTPException:
+        raise
     except jwt.ExpiredSignatureError:
         logger.info("Token expired")
         raise HTTPException(

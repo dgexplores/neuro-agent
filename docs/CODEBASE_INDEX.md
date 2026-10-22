@@ -38,15 +38,15 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── CaseHistoryPage.js      # Case history view
-│   │   ├── DiagnosisPage.js        # Main diagnosis interface
-│   │   ├── DiagnosisResults.js     # Results display
-│   │   ├── HomePage.js             # Landing page
-│   │   └── Navigation.js           # Navigation component
+│   │   ├── CaseHistoryPage.jsx      # Case history view
+│   │   ├── DiagnosisPage.jsx        # Main diagnosis interface
+│   │   ├── DiagnosisResults.jsx     # Results display
+│   │   ├── HomePage.jsx             # Landing page
+│   │   └── Navigation.jsx           # Navigation component
 │   ├── services/
 │   │   └── api.js                  # API client
-│   ├── App.js                      # Main application component
-│   └── index.js                    # Application entry point
+│   ├── App.jsx                      # Main application component
+│   └── index.jsx                    # Application entry point
 └── package.json
 ```
 
@@ -112,18 +112,18 @@ mcp-servers/
 
 ### Core Frontend Files
 
-#### `frontend/src/App.js` - Main Application
+#### `frontend/src/App.jsx` - Main Application
 - React Router setup
 - Application state management
 - Theme configuration
 
-#### `frontend/src/components/DiagnosisPage.js` - Diagnosis Interface
+#### `frontend/src/components/DiagnosisPage.jsx` - Diagnosis Interface
 - Patient data input forms
 - Symptom collection
 - Medical history capture
 - Real-time diagnosis requests
 
-#### `frontend/src/components/DiagnosisResults.js` - Results Display
+#### `frontend/src/components/DiagnosisResults.jsx` - Results Display
 - Differential diagnosis visualization
 - Confidence score display
 - Treatment recommendations

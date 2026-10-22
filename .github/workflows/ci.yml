@@ -1,0 +1,106 @@
+name: Verify NeuroAgent
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: 'true'
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install backend and acceptance test dependencies
+        run: >-
+          python -m pip install -r requirements.txt
+          'pytest-bdd>=6.1.1,<9' pytest-cov pytest-timeout requests-mock
+      - name: Test the complete backend suite
+        run: python -m pytest backend/tests tests/test_*.py --junitxml=reports/backend.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: reports/backend.xml
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=low
+      - run: npm run test:ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: neuroagent:${{ github.sha }}
+      - name: Verify packaged backend health endpoint without AWS calls
+        run: >-
+          docker run --rm --entrypoint python
+          -e AWS_EC2_METADATA_DISABLED=true -e AWS_ACCESS_KEY_ID=testing
+          -e AWS_SECRET_ACCESS_KEY=testing -e AWS_REGION=us-east-1
+          -e JWT_SECRET_KEY=disposable-ci-only
+          neuroagent:${{ github.sha }}
+          -c 'from backend.main import app; from fastapi.testclient import TestClient; response=TestClient(app).get("/health"); assert response.status_code == 200; assert response.json()["services"]["bedrock"] == "not_checked"' 
+  infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AWS_EC2_METADATA_DISABLED: 'true'
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build fresh Linux x86_64 Python 3.11 Lambda layer
+        run: bash infrastructure/cdk-clean/build_layer.sh
+      - name: Install infrastructure tools
+        run: python -m pip install -r infrastructure/cdk-clean/requirements.txt
+      - name: Synthesize and verify canonical AWS infrastructure
+        run: python infrastructure/cdk-clean/verify_stack.py
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pip-audit
+      - run: pip-audit -r requirements-lambda.txt --no-deps --disable-pip

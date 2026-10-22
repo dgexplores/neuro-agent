@@ -10,7 +10,7 @@ const Navigation = () => {
     if (location.pathname === '/') return 0;
     if (location.pathname === '/diagnosis') return 1;
     if (location.pathname === '/history') return 2;
-    return 0;
+    return false;
   };
 
   const handleChange = (event, newValue) => {
@@ -21,9 +21,9 @@ const Navigation = () => {
   return (
     <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
       <Tabs value={getCurrentTab()} onChange={handleChange} centered>
-        <Tab label="首頁" />
-        <Tab label="診斷分析" />
-        <Tab label="病例記錄" />
+        <Tab label="Home" />
+        <Tab label="Assessment" />
+        <Tab label="Saved cases" />
       </Tabs>
     </Box>
   );
