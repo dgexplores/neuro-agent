@@ -28,7 +28,7 @@ jobs:
           python -m venv .ci-venv
           .ci-venv/bin/python -m pip install -r requirements.txt 'pytest-bdd>=6.1.1,<9' pytest-cov pytest-timeout requests-mock
       - name: Test the complete backend suite
-        run: .ci-venv/bin/python -m pytest backend/tests tests/test_*.py --timeout=45 -o faulthandler_timeout=30 --junitxml=reports/backend.xml
+        run: .ci-venv/bin/python -m pytest backend/tests tests/test_*.py --timeout=45 --timeout-method=thread -o faulthandler_timeout=30 --junitxml=reports/backend.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
