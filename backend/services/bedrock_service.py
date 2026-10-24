@@ -5,14 +5,16 @@ import json
 import os
 from typing import Dict, Any, Optional
 import asyncio
+import re
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 class BedrockService:
     def __init__(self):
         self.region = os.getenv("AWS_REGION", "us-east-1")
         self.agent_id = os.getenv("BEDROCK_AGENTCORE_AGENT_ID")
-        # Use Mistral Large if Claude models are not available
-        self.model_id = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+        # First-party, multimodal default; access/credits must still be checked.
+        self.model_id = os.getenv("BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0")
 
         # Initialize Bedrock clients
         self._bedrock_runtime = None
@@ -21,7 +23,11 @@ class BedrockService:
     @property
     def bedrock_runtime(self):
         if self._bedrock_runtime is None:
-            self._bedrock_runtime = boto3.client("bedrock-runtime", region_name=self.region)
+            self._bedrock_runtime = boto3.client(
+                "bedrock-runtime", region_name=self.region,
+                config=Config(retries={"mode": "adaptive", "max_attempts": 2},
+                              connect_timeout=3, read_timeout=20),
+            )
         return self._bedrock_runtime
 
     @bedrock_runtime.setter
@@ -101,7 +107,15 @@ class BedrockService:
             raise HTTPException(status_code=503, detail="Assessment model unavailable")
 
     def _invoke_model_sync(self, prompt: str) -> Dict[str, Any]:
-        """Synchronous model invocation - supports both Anthropic and Mistral models"""
+        """Use Bedrock's common contract for Nova and current Claude models."""
+
+        if self._uses_converse():
+            response = self.bedrock_runtime.converse(
+                modelId=self.model_id,
+                messages=[{"role": "user", "content": [{"text": prompt}]}],
+                inferenceConfig={"maxTokens": 4096},
+            )
+            return {"output": {"text": self._converse_text(response)}}
 
         # Detect model type and use appropriate format
         if "mistral" in self.model_id.lower():
@@ -144,10 +158,31 @@ class BedrockService:
 
         return {"output": {"text": content}}
 
+    def _uses_converse(self) -> bool:
+        return ("amazon.nova" in self.model_id
+                or bool(re.search(r"anthropic\.claude-(?:haiku|sonnet|opus)-", self.model_id)))
+
+    def _supports_images(self) -> bool:
+        # Nova Micro is text-only. Keep unsupported providers explicit.
+        return ("anthropic.claude-3" in self.model_id
+                or bool(re.search(r"anthropic\.claude-(?:haiku|sonnet|opus)-", self.model_id))
+                or bool(re.search(r"amazon\.nova-(?:2-)?(?:lite|pro|premier)-", self.model_id)))
+
+    @staticmethod
+    def _converse_text(response: Dict[str, Any]) -> str:
+        if response.get("stopReason") != "end_turn":
+            raise ValueError("Incomplete or refused model response")
+        content = response["output"]["message"]["content"]
+        text = "".join(part["text"] for part in content if "text" in part)
+        if not text.strip():
+            raise ValueError("Model returned no text")
+        return text
+
     async def analyze_image(self, image_data: bytes, image_type: str) -> Dict[str, Any]:
-        """Call a configured Claude multimodal model; never synthesize findings."""
-        if "anthropic.claude-3" not in self.model_id:
+        """Call the selected multimodal model; never synthesize findings."""
+        if not self._supports_images():
             raise HTTPException(status_code=501, detail="Configured model does not support this image adapter")
+        instruction = "For an educational prototype, describe visible image observations only. Do not claim a diagnosis or clinical validity. Return JSON only with keys findings (list of strings), limitations (list of strings), impression (string). State uncertainty and require qualified review."
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 2048,
@@ -155,16 +190,27 @@ class BedrockService:
             "messages": [{"role": "user", "content": [
                 {"type": "image", "source": {"type": "base64", "media_type": image_type,
                  "data": base64.b64encode(image_data).decode("ascii")}},
-                {"type": "text", "text": "For an educational prototype, describe visible image observations only. Do not claim a diagnosis or clinical validity. Return JSON only with keys findings (list of strings), limitations (list of strings), impression (string). State uncertainty and require qualified review."}
+                {"type": "text", "text": instruction}
             ]}]
         }
         try:
-            response = await asyncio.to_thread(
-                self.bedrock_runtime.invoke_model, modelId=self.model_id,
-                body=json.dumps(body), accept="application/json", contentType="application/json"
-            )
-            envelope = json.loads(response["body"].read())
-            text = "".join(part.get("text", "") for part in envelope["content"])
+            if self._uses_converse():
+                response = await asyncio.to_thread(
+                    self.bedrock_runtime.converse, modelId=self.model_id,
+                    messages=[{"role": "user", "content": [
+                        {"image": {"format": image_type.split("/")[1],
+                                   "source": {"bytes": image_data}}},
+                        {"text": instruction},
+                    ]}], inferenceConfig={"maxTokens": 2048},
+                )
+                text = self._converse_text(response)
+            else:
+                response = await asyncio.to_thread(
+                    self.bedrock_runtime.invoke_model, modelId=self.model_id,
+                    body=json.dumps(body), accept="application/json", contentType="application/json"
+                )
+                envelope = json.loads(response["body"].read())
+                text = "".join(part.get("text", "") for part in envelope["content"])
             analysis = json.loads(text)
             if (not isinstance(analysis, dict)
                 or not isinstance(analysis.get("impression"), str)

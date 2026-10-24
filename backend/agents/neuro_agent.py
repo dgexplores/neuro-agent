@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import HTTPException
 
 from ..models.patient import DiagnosisRequest, PatientCase
-from ..services.bedrock_service import BedrockService
+from ..services.model_service import ModelService
 from ..utils.medical_knowledge import NeuroMedicalKnowledge
 from ..utils.input_sanitizer import sanitizer  # Phase 8-2: Security hardening
 
@@ -15,7 +15,7 @@ from ..utils.input_sanitizer import sanitizer  # Phase 8-2: Security hardening
 logger = logging.getLogger(__name__)
 
 class NeuroAgent:
-    def __init__(self, bedrock_service: BedrockService):
+    def __init__(self, bedrock_service: ModelService):
         self.bedrock_service = bedrock_service
         self.knowledge_base = NeuroMedicalKnowledge()
 

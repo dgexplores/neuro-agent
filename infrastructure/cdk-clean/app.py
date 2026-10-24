@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 import aws_cdk as cdk
 from aws_cdk import (
-    CfnOutput, CfnParameter, Duration, RemovalPolicy, Stack,
+    Aws, CfnCondition, CfnOutput, CfnParameter, Duration, Fn, RemovalPolicy, Stack, Token,
     aws_apigateway as apigw, aws_dynamodb as dynamodb,
     aws_iam as iam, aws_lambda as lambda_, aws_logs as logs, aws_s3 as s3,
     aws_cloudfront as cloudfront, aws_cloudfront_origins as origins_,
@@ -25,8 +25,14 @@ class NeuroAgentStack(Stack):
         )
         model = CfnParameter(
             self, 'BedrockModelId', type='String',
-            default='anthropic.claude-3-sonnet-20240229-v1:0',
-            description='A supported direct Bedrock foundation model enabled in the deployment region.',
+            default='amazon.nova-lite-v1:0',
+            allowed_pattern=r'(?:(?:us|eu|apac|au|jp|in|ca|us-gov|global)\.)?(?:amazon|anthropic|mistral)\.[a-z0-9:-]+',
+            description='An enabled Bedrock model ID or geographic/global inference profile ID; access and credits are account-specific.',
+        )
+        demo_access = CfnParameter(
+            self, 'DemoAccessEnabled', type='String', default='false',
+            allowed_values=['true', 'false'],
+            description='Opt in to isolated synthetic demonstration sessions with bounded model usage.',
         )
         origins_value = self.node.try_get_context('allowed_origins') or 'http://localhost:3000'
         origins = [origin.strip() for origin in origins_value.split(',') if origin.strip()]
@@ -72,6 +78,7 @@ class NeuroAgentStack(Stack):
             self, 'CasesTable',
             partition_key=dynamodb.Attribute(name='case_id', type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            time_to_live_attribute='expires_at',
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
             removal_policy=RemovalPolicy.RETAIN,
         )
@@ -86,10 +93,35 @@ class NeuroAgentStack(Stack):
             managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')],
         )
         # The inspected application uses direct model invocation; it does not create AgentCore.
-        role.add_to_policy(iam.PolicyStatement(
-            actions=['bedrock:InvokeModel'],
-            resources=[self.format_arn(service='bedrock', account='', resource='foundation-model', resource_name=model.value_as_string)],
+        model_parts = Fn.split('.', model.value_as_string)
+        profile = CfnCondition(self, 'UsesInferenceProfile', expression=Fn.condition_not(
+            Fn.condition_or(*[Fn.condition_equals(Fn.select(0, model_parts), provider)
+                              for provider in ('amazon', 'anthropic', 'mistral')]),
         ))
+        base_model = Fn.condition_if(profile.logical_id,
+            Fn.join('.', [Fn.select(1, model_parts), Fn.select(2, model_parts)]),
+            model.value_as_string)
+        profile_arn = self.format_arn(service='bedrock', resource='inference-profile',
+                                     resource_name=model.value_as_string)
+        direct_arn = self.format_arn(service='bedrock', account='', resource='foundation-model',
+                                    resource_name=model.value_as_string)
+        routed_model_arn = Fn.join('', [
+            'arn:', Aws.PARTITION, ':bedrock:*::foundation-model/', Token.as_string(base_model),
+        ])
+        # Profile invocations require both resources. The wildcard is only the
+        # destination region, and the matching model can only run via this profile.
+        iam.CfnPolicy(self, 'ModelInvocationPolicy', policy_name='NeuroAgentModelInvocation',
+                      roles=[role.role_name], policy_document={
+            'Version': '2012-10-17', 'Statement': [
+                Fn.condition_if(profile.logical_id,
+                    {'Effect': 'Allow', 'Action': 'bedrock:InvokeModel', 'Resource': profile_arn},
+                    {'Effect': 'Allow', 'Action': 'bedrock:InvokeModel', 'Resource': direct_arn}),
+                Fn.condition_if(profile.logical_id,
+                    {'Effect': 'Allow', 'Action': 'bedrock:InvokeModel', 'Resource': routed_model_arn,
+                     'Condition': {'StringEquals': {'bedrock:InferenceProfileArn': profile_arn}}},
+                    Aws.NO_VALUE),
+            ],
+        })
         cases.grant_read_write_data(role)
         images.grant_read_write(role)
         dependencies = lambda_.LayerVersion(
@@ -115,9 +147,11 @@ class NeuroAgentStack(Stack):
                 'CASE_STORE_BACKEND': 'dynamodb',
                 'S3_BUCKET_NAME': images.bucket_name,
                 'BEDROCK_MODEL_ID': model.value_as_string,
+                'MODEL_PROVIDER': 'bedrock',
                 'JWT_SECRET_KEY': jwt_secret.value_as_string,
                 'ALLOWED_ORIGINS': ','.join(origins), 'ENV': 'production',
                 'REDIS_ENABLED': 'false',
+                'DEMO_ACCESS_ENABLED': demo_access.value_as_string,
             },
         )
         api = apigw.LambdaRestApi(

@@ -6,15 +6,19 @@ import asyncio
 import sqlite3
 from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
+from pydantic import BaseModel, ConfigDict, Field
 
 # Load configuration before importing modules that read JWT and provider settings.
 load_dotenv()
 
 from .models.patient import PatientCase, DiagnosisRequest, DiagnosisResponse
 from .agents.neuro_agent import NeuroAgent
-from .services.bedrock_service import BedrockService
-from .utils.auth import verify_token
+from .services.model_service import create_model_service
+from .utils.auth import verify_token, create_public_demo_token
 from .services.case_store import SQLiteCaseStore, get_case_store
+from .services.demo_access import (
+    SAMPLES, DEMO_TTL_SECONDS, demo_config, require_demo_enabled, get_demo_budget,
+)
 
 app = FastAPI(
     title="NeuroAgent API",
@@ -52,7 +56,7 @@ app.add_middleware(
 security = HTTPBearer()
 
 # Initialize services
-bedrock_service = BedrockService()
+bedrock_service = create_model_service()
 neuro_agent = NeuroAgent(bedrock_service)
 
 @app.get("/")
@@ -61,7 +65,53 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "services": {"bedrock": "not_checked"}}
+    return {"status": "healthy", "services": {os.getenv("MODEL_PROVIDER", "bedrock").lower(): "not_checked"}}
+
+
+@app.get("/api/v1/demo/config")
+async def get_demo_config():
+    """Advertise only public demo capabilities and fictional inputs."""
+    return demo_config()
+
+
+@app.post("/api/v1/demo/session")
+async def start_demo_session():
+    require_demo_enabled()
+    return {"access_token": create_public_demo_token(), "token_type": "bearer",
+            "expires_in": DEMO_TTL_SECONDS, "scope": "demo"}
+
+
+class DemoAssessmentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sample_id: str = Field(min_length=1, max_length=80)
+
+
+@app.post("/api/v1/demo/diagnosis", response_model=DiagnosisResponse)
+async def create_demo_diagnosis(
+    request: DemoAssessmentRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    case_store=Depends(get_case_store),
+    budget=Depends(get_demo_budget),
+):
+    """Reserve one bounded real inference for a server-owned fictional input."""
+    require_demo_enabled()
+    user_id = verify_token(credentials.credentials, allow_demo=True, require_demo=True)
+    sample = SAMPLES.get(request.sample_id)
+    if sample is None:
+        raise HTTPException(status_code=404, detail="Synthetic example not found")
+    try:
+        # Failed model calls also consume the reservation: retries may incur cost.
+        await asyncio.to_thread(budget.reserve, user_id)
+        result = await neuro_agent.analyze_case(DiagnosisRequest(**sample["request"]))
+        response = DiagnosisResponse(**result)
+        await asyncio.to_thread(case_store.save, user_id, response.model_dump(mode="json"))
+        return response
+    except HTTPException:
+        raise
+    except (sqlite3.Error, BotoCoreError, ClientError, OSError):
+        raise HTTPException(status_code=503, detail="Demo storage unavailable")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Assessment service unavailable")
 
 @app.post("/api/v1/diagnosis", response_model=DiagnosisResponse)
 async def create_diagnosis(
@@ -191,7 +241,7 @@ async def get_case(
     case_store: SQLiteCaseStore = Depends(get_case_store),
 ):
     """Retrieve a stored response belonging to the authenticated user."""
-    user_id = verify_token(credentials.credentials)
+    user_id = verify_token(credentials.credentials, allow_demo=True)
     try:
         case = await asyncio.to_thread(case_store.get, user_id, case_id)
     except (sqlite3.Error, BotoCoreError, ClientError):

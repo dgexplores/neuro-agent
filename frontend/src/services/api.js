@@ -55,10 +55,31 @@ export const submitDiagnosis = async (diagnosisRequest) => {
       401: 'Your session token is invalid or expired. Save a new token and retry.',
       403: 'Save a bearer token in the API session panel before submitting.',
       422: 'Check the required fields and numeric values, then retry.',
+      429: 'The demo inference budget has been reached. Each session allows one attempt and the site allows ten per UTC day.',
       502: 'The model returned an invalid response. Please retry.',
       503: 'The backend cannot reach its model or storage service. Check the backend configuration.'
     };
     throw new Error(messages[status] || 'Unable to reach the assessment service. Check your backend URL and connection.');
+  }
+};
+
+export const getDemoConfig = async () => (await api.get('/api/v1/demo/config')).data;
+
+export const startDemoSession = async () => (await api.post('/api/v1/demo/session')).data;
+
+export const submitDemoAssessment = async (sampleId) => {
+  try {
+    return (await api.post('/api/v1/demo/diagnosis', { sample_id: sampleId })).data;
+  } catch (error) {
+    const messages = {
+      401: 'Your demo session expired. Start a new synthetic demo session.',
+      403: 'Start a synthetic demo session before running this example.',
+      404: 'This synthetic demo is unavailable.',
+      429: 'The demo inference budget has been reached. Each session allows one attempt and the site allows ten per UTC day.',
+      502: 'The model returned an invalid response. This attempt has been used.',
+      503: 'The model or storage service is unavailable. This attempt may have been used.'
+    };
+    throw new Error(messages[error.response?.status] || 'Unable to reach the demo service. Check your connection.');
   }
 };
 

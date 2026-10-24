@@ -69,7 +69,7 @@ def create_access_token(
     return token
 
 
-def verify_token(token: str) -> str:
+def verify_token(token: str, *, allow_demo: bool = False, require_demo: bool = False) -> str:
     """
     Verify JWT token with comprehensive security checks
 
@@ -121,6 +121,19 @@ def verify_token(token: str) -> str:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type"
             )
+
+        # Public demonstrations receive a restricted token, never normal API access.
+        is_demo = payload.get("scope") == "demo"
+        if (is_demo and not allow_demo) or (require_demo and not is_demo):
+            raise HTTPException(status_code=403, detail="This session cannot use this operation")
+        if is_demo:
+            import uuid
+            try:
+                uuid.UUID(user_id.removeprefix("demo-"))
+                if not user_id.startswith("demo-"):
+                    raise ValueError("Invalid demo owner")
+            except (AttributeError, ValueError):
+                raise HTTPException(status_code=401, detail="Invalid demo session")
 
         # ✅ SECURITY: Check if token is revoked (blacklisted)
         if is_token_revoked(token):
@@ -201,3 +214,12 @@ def is_token_revoked(token: str) -> bool:
 def create_demo_token() -> str:
     """Create demo token for hackathon testing"""
     return create_access_token("demo-user", "demo")
+
+
+def create_public_demo_token() -> str:
+    """Issue a separate owner for one short-lived synthetic demonstration."""
+    import uuid
+    return create_access_token(
+        "demo-" + str(uuid.uuid4()), "synthetic-demo",
+        {"scope": "demo", "exp": datetime.now(timezone.utc) + timedelta(minutes=15)},
+    )

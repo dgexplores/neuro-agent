@@ -43,12 +43,83 @@ async def test_text_provider_request_and_response_contract(family):
 @pytest.mark.asyncio
 async def test_model_failure_is_not_a_successful_assessment():
     service = BedrockService()
+    service.model_id = "amazon.nova-lite-v1:0"
     service.bedrock_runtime = runtime("bedrock-runtime")
     with Stubber(service.bedrock_runtime) as stub:
-        stub.add_client_error("invoke_model", service_error_code="AccessDeniedException")
+        stub.add_client_error("converse", service_error_code="AccessDeniedException")
         with pytest.raises(HTTPException) as error:
             await service.invoke_model_direct("synthetic")
         assert error.value.status_code == 503
+
+
+def converse_response(text, stop="end_turn"):
+    return {"output": {"message": {"role": "assistant", "content": [{"text": text}]}},
+            "stopReason": stop, "usage": {"inputTokens": 10, "outputTokens": 10, "totalTokens": 20},
+            "metrics": {"latencyMs": 1}}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", ["amazon.nova-lite-v1:0", "us.amazon.nova-2-lite-v1:0",
+                                  "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                                  "us.anthropic.claude-sonnet-4-6"])
+async def test_current_models_use_converse_with_explicit_output_limit(model):
+    service = BedrockService()
+    service.model_id = model
+    service.bedrock_runtime = runtime("bedrock-runtime")
+    with Stubber(service.bedrock_runtime) as stub:
+        stub.add_response("converse", converse_response("synthetic-output"), {
+            "modelId": model, "messages": [{"role": "user", "content": [{"text": "synthetic"}]}],
+            "inferenceConfig": {"maxTokens": 4096},
+        })
+        assert await service.invoke_model_direct("synthetic") == {"output": {"text": "synthetic-output"}}
+        stub.assert_no_pending_responses()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stop", ["max_tokens", "content_filtered", "guardrail_intervened"])
+async def test_truncated_or_refused_converse_output_is_not_a_success(stop):
+    service = BedrockService()
+    service.model_id = "amazon.nova-lite-v1:0"
+    service.bedrock_runtime = runtime("bedrock-runtime")
+    with Stubber(service.bedrock_runtime) as stub:
+        stub.add_response("converse", converse_response("incomplete", stop), {
+            "modelId": service.model_id, "messages": ANY, "inferenceConfig": {"maxTokens": 4096},
+        })
+        with pytest.raises(HTTPException) as error:
+            await service.invoke_model_direct("synthetic")
+        assert error.value.status_code == 503
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", ["amazon.nova-lite-v1:0", "us.amazon.nova-2-lite-v1:0",
+                                  "us.anthropic.claude-haiku-4-5-20251001-v1:0"])
+@pytest.mark.parametrize("media_type", ["image/png", "image/jpeg"])
+async def test_current_multimodal_models_receive_actual_image_bytes(model, media_type):
+    service = BedrockService()
+    service.model_id = model
+    service.bedrock_runtime = runtime("bedrock-runtime")
+    image = b"synthetic-image-bytes"
+    analysis = {"findings": ["Synthetic observation"], "limitations": ["Not clinical"], "impression": "Synthetic"}
+    with Stubber(service.bedrock_runtime) as stub:
+        stub.add_response("converse", converse_response(json.dumps(analysis)), {
+            "modelId": model, "messages": [{"role": "user", "content": [
+                {"image": {"format": media_type.split("/")[1], "source": {"bytes": image}}},
+                {"text": ANY},
+            ]}], "inferenceConfig": {"maxTokens": 2048},
+        })
+        assert await service.analyze_image(image, media_type) == analysis
+        stub.assert_no_pending_responses()
+
+
+@pytest.mark.asyncio
+async def test_text_only_nova_micro_rejects_image_without_provider_call():
+    service = BedrockService()
+    service.model_id = "us.amazon.nova-micro-v1:0"
+    service.bedrock_runtime = Mock()
+    with pytest.raises(HTTPException) as error:
+        await service.analyze_image(b"synthetic", "image/png")
+    assert error.value.status_code == 501
+    service.bedrock_runtime.converse.assert_not_called()
 
 
 @pytest.mark.parametrize("score", [True, False, float("nan"), float("inf"), -0.1, 1.1])
