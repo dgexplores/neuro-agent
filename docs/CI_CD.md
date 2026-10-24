@@ -110,10 +110,26 @@ The canonical stack includes a retained private S3 frontend bucket and CloudFron
 
 ## Reproducible backend test container
 
-The backend CI job runs `bash scripts/test_backend_container.sh`. A whitelisted
+Run `bash scripts/test_backend_container.sh` locally for the isolated offline check. A whitelisted
 build context includes the locked runtime, pinned test tools and application
 sources, while excluding credentials and local caches. Tests run in the built
 Linux Python 3.11 image with `--network none` and write a JUnit report to the
 host's `reports/` directory. Both per-test and overall process deadlines are
 active. The same command can be used locally with Docker. Host-native pytest
 runs remain available through `make test`.
+
+## Oracle delivery and current backend runner
+
+The hosted backend-contracts job installs pinned dependencies on Python 3.11
+and runs the complete suite on `ubuntu-24.04-arm`, with dummy AWS credentials,
+per-test deadlines and an overall process deadline. It uses mocked cloud
+providers. Container startup and native ARM storage checks remain separate
+blocking jobs. The local offline Docker command remains available; it passed
+181 tests. The current frontend suite has 25 passing tests.
+
+`oracle-deploy.yml` is manual, main-only, and gated on all CI jobs plus native
+ARM packaging. It uses the protected `oracle-demo` environment, pinned SSH host
+keys and a dedicated deployment key. Runtime Gemini/JWT secrets remain on the
+host. Source revisions and frontend assets are immutable releases; data stays
+in a named volume. See the [Oracle guide](../deploy/oracle/README.md) and
+[actual live verification and hosted-runner limits](ORACLE_VERIFICATION.md).

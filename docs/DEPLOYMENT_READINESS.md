@@ -1,8 +1,10 @@
 # Deployment readiness and route guide
 
-The current application passes local behavior, dependency, image and infrastructure
-checks. No cloud endpoint is claimed. Model behavior was tested with deterministic
-provider fixtures, not billable Bedrock inference or clinical validation.
+The Oracle + Gemini fictional demonstration is live at
+https://neuro-161-118-164-31.sslip.io/. Actual model, storage, ownership, quota
+and restart checks are recorded in [Oracle verification](ORACLE_VERIFICATION.md).
+The preserved AWS deployment remains unexecuted; its prerequisites follow below.
+Hosted backend runner sign-off is tracked separately from the manual live release.
 
 ## Local use
 
@@ -10,7 +12,7 @@ provider fixtures, not billable Bedrock inference or clinical validation.
 2. Run `make install`; copy `.env.example` to `.env` and set a new private signing secret.
 3. Run `make api` and `make web` in separate terminals.
 4. Open `http://localhost:3000`. Create a local development bearer token using the helper in the README and save it in the session panel.
-5. Open Assessment, enter synthetic information, and submit. Model-backed results require an enabled AWS model. If AWS is unavailable the UI displays the actual service failure.
+5. Open Assessment, enter synthetic information, and submit. Model-backed results require the selected provider and actual access. Use the fictional demo with Gemini or configure Bedrock explicitly; provider failures remain actual errors.
 6. Save the returned case ID and use Saved cases to retrieve it with the same account token.
 
 `make test` runs backend and frontend checks without AWS calls. No mock success
