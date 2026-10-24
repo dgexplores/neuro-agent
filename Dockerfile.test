@@ -6,5 +6,6 @@ RUN pip install --no-cache-dir --only-binary=:all: -r requirements-lambda.txt -r
 COPY backend/ ./backend/
 COPY tests/ ./tests/
 COPY data/ ./data/
+COPY deploy/ ./deploy/
 COPY pyproject.toml ./
 CMD ["sh", "-c", "exec timeout --signal=ABRT --kill-after=10s 120s python -X faulthandler -m pytest backend/tests tests/test_*.py --timeout=45 --timeout-method=thread --junitxml=/reports/backend.xml"]

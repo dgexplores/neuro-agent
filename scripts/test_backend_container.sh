@@ -6,7 +6,7 @@ IMAGE="neuroagent-backend-tests:local"
 # A whitelisted context avoids local caches, credentials, frontend dependencies
 # and the production .dockerignore's intentional omission of test sources.
 COPYFILE_DISABLE=1 tar --no-xattrs --exclude='__pycache__' --exclude='*.pyc' -cf - \
-  Dockerfile.test requirements-lambda.txt requirements-test.in backend tests data pyproject.toml \
+  Dockerfile.test requirements-lambda.txt requirements-test.in backend tests data deploy pyproject.toml \
   | docker build -f Dockerfile.test -t "$IMAGE" -
 mkdir -p reports
 docker run --rm --network none \
