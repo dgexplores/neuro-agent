@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 
 const features = [
   { title: 'Structured assessment input', description: 'Submit symptoms, patient context, and optional clinical observations through the Python API.' },
-  { title: 'AWS Bedrock integration', description: 'Explore how a language model turns structured input into assessment suggestions and follow-up questions.' },
+  { title: 'Configurable model integration', description: 'Explore how a language model turns structured input into assessment suggestions and follow-up questions.' },
   { title: 'Saved case lookup', description: 'Retrieve a persisted assessment by its case ID using the account that created it.' },
-  { title: 'Application engineering', description: 'Explore validated API requests, authenticated case access, persistence, automated tests, and AWS deployment configuration.' }
+  { title: 'Application engineering', description: 'Explore validated API requests, authenticated case access, persistence, automated tests, and cloud deployment configuration.' }
 ];
 
 const HomePage = () => {
@@ -18,7 +18,7 @@ const HomePage = () => {
         <Typography variant="h5" color="text.secondary" gutterBottom>AI assessment workflow · Educational portfolio prototype</Typography>
         <Typography sx={{ mb: 3, maxWidth: 680, mx: 'auto' }}>
           A Python, FastAPI, and React application for exploring structured AI workflows,
-          AWS integration, and authenticated case storage. Use synthetic examples to
+          model integration, and authenticated case storage. Use synthetic examples to
           examine the application from input validation to saved results.
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
