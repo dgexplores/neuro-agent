@@ -8,8 +8,8 @@ permissions:
   contents: read
 jobs:
   backend-contracts:
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       AWS_EC2_METADATA_DISABLED: 'true'
       AWS_REGION: us-east-1
@@ -18,17 +18,15 @@ jobs:
       AWS_SECRET_ACCESS_KEY: testing
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install the pinned backend and test dependencies
-        run: >-
-          python -m pip install --only-binary=:all: -r requirements-lambda.txt -r requirements-test.in
-      - name: Run all backend contracts with mocked cloud providers
-        timeout-minutes: 5
-        run: |
-          mkdir -p reports
-          timeout --signal=ABRT --kill-after=10s 120s python -X faulthandler -m pytest backend/tests tests/test_*.py --timeout=45 --timeout-method=thread --junitxml=reports/backend.xml
+      - name: Run all backend contracts in the isolated Linux test image
+        timeout-minutes: 15
+        # The same pinned environment is used locally and in CI. The script
+        # copies an allowlisted context and disables network access during tests;
+        # Dockerfile.test retains the full suite and its process/test deadlines.
+        run: bash scripts/test_backend_container.sh
+      - name: Remove an interrupted test container
+        if: cancelled()
+        run: docker ps -aq --filter ancestor=neuroagent-backend-tests:local | xargs -r docker rm -f
       - uses: actions/upload-artifact@v4
         if: always()
         with:
