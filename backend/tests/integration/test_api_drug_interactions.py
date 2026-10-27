@@ -16,7 +16,8 @@ from backend.main import app
 @pytest.fixture
 def client():
     """Create FastAPI test client"""
-    return TestClient(app)
+    with TestClient(app) as api:
+        yield api
 
 
 @pytest.fixture

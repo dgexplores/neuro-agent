@@ -1,5 +1,6 @@
 """Executable API acceptance contracts; Bedrock is the only stubbed service."""
 import json
+from contextlib import ExitStack
 from unittest.mock import AsyncMock
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -18,7 +19,8 @@ PAYLOAD = {
 
 @pytest.fixture
 def context():
-    return {}
+    with ExitStack() as clients:
+        yield {"clients": clients}
 
 @given("a configured local assessment application")
 def configured(context, monkeypatch, case_store):
@@ -26,7 +28,8 @@ def configured(context, monkeypatch, case_store):
                 "recommendations": [], "risk_factors": [], "next_steps": []}
     stub = AsyncMock(return_value={"output": {"text": json.dumps(response)}})
     monkeypatch.setattr(neuro_agent.bedrock_service, "invoke_model_direct", stub)
-    context.update(client=TestClient(app), store=case_store, stub=stub,
+    api = context["clients"].enter_context(TestClient(app))
+    context.update(client=api, store=case_store, stub=stub,
                    headers={"Authorization": "Bearer " + create_access_token("owner", "owner")})
 
 @when("an authenticated owner submits a valid synthetic case")
