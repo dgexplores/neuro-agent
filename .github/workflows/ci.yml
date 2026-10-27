@@ -1,18 +1,33 @@
 name: Verify NeuroAgent
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
   workflow_call:
 permissions:
   contents: read
 jobs:
-  backend-contracts:
-    # Keep the test OS stable across ubuntu-latest image migrations.
+  backend-suites:
     runs-on: ubuntu-24.04
-    # Match the Python runtime image used by both deployment Dockerfiles.
     container: python:3.11-slim
-    timeout-minutes: 15
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: unit
+            paths: backend/tests/unit backend/tests/test_neuro_agent.py
+          - group: diagnosis-api
+            paths: backend/tests/integration/test_api_diagnosis.py
+          - group: drug-api
+            paths: backend/tests/integration/test_api_drug_interactions.py
+          - group: image-api
+            paths: backend/tests/integration/test_api_image_analysis.py
+          - group: acceptance
+            paths: backend/tests/acceptance
+          - group: adapters
+            paths: tests/test_*.py
     env:
       AWS_EC2_METADATA_DISABLED: 'true'
       AWS_REGION: us-east-1
@@ -22,57 +37,56 @@ jobs:
       PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
-      - name: Install the pinned backend and test dependencies
+      - name: Install pinned backend and test dependencies
         run: python -m pip install -r requirements-lambda.txt -r requirements-test.in
-      - name: Run backend unit contracts
-        if: ${{ !cancelled() }}
+      - name: Verify ${{ matrix.group }} contracts
         timeout-minutes: 3
         run: |
-          # A fresh process per group prevents event-loop/client state leaking
-          # between suites. No tests are skipped; all four groups are required.
           ulimit -c 0
           timeout --signal=TERM --kill-after=10s 90s \
-            python -X faulthandler -m pytest -c pyproject.toml backend/tests/unit backend/tests/test_neuro_agent.py \
+            python -X faulthandler -m pytest -c pyproject.toml ${{ matrix.paths }} \
             -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
-            -o faulthandler_timeout=30 --junitxml=reports/backend-unit.xml
-      - name: Run backend API integration contracts
-        if: ${{ !cancelled() }}
-        timeout-minutes: 3
-        run: |
-          # A fresh process per group prevents event-loop/client state leaking
-          # between suites. No tests are skipped; all four groups are required.
-          ulimit -c 0
-          timeout --signal=TERM --kill-after=10s 90s \
-            python -X faulthandler -m pytest -c pyproject.toml backend/tests/integration \
-            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
-            -o faulthandler_timeout=30 --junitxml=reports/backend-api.xml
-      - name: Run executable acceptance scenarios
-        if: ${{ !cancelled() }}
-        timeout-minutes: 3
-        run: |
-          # A fresh process per group prevents event-loop/client state leaking
-          # between suites. No tests are skipped; all four groups are required.
-          ulimit -c 0
-          timeout --signal=TERM --kill-after=10s 90s \
-            python -X faulthandler -m pytest -c pyproject.toml backend/tests/acceptance \
-            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
-            -o faulthandler_timeout=30 --junitxml=reports/backend-acceptance.xml
-      - name: Run provider, storage and deployment contracts
-        if: ${{ !cancelled() }}
-        timeout-minutes: 3
-        run: |
-          # A fresh process per group prevents event-loop/client state leaking
-          # between suites. No tests are skipped; all four groups are required.
-          ulimit -c 0
-          timeout --signal=TERM --kill-after=10s 90s \
-            python -X faulthandler -m pytest -c pyproject.toml tests/test_*.py \
-            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
-            -o faulthandler_timeout=30 --junitxml=reports/backend-adapters.xml
+            -o faulthandler_timeout=30 --junitxml=reports/backend-${{ matrix.group }}.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: backend-test-results
-          path: reports/backend-*.xml
+          name: backend-test-results-${{ matrix.group }}
+          path: reports/backend-${{ matrix.group }}.xml
+  backend-contracts:
+    needs: backend-suites
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every backend suite to pass
+        env:
+          BACKEND_RESULT: ${{ needs.backend-suites.result }}
+        run: test "$BACKEND_RESULT" = success
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: backend-test-results-*
+          merge-multiple: true
+          path: reports
+      - name: Verify all 181 distinct contracts ran without skips
+        run: |
+          python3 - <<'PYTEST_REPORT'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          expected = {'unit': 49, 'diagnosis-api': 15, 'drug-api': 15,
+                      'image-api': 12, 'acceptance': 3, 'adapters': 87}
+          identities = set()
+          for group, count in expected.items():
+              root = ET.parse(Path('reports') / f'backend-{group}.xml').getroot()
+              cases = list(root.iter('testcase'))
+              assert len(cases) == count, (group, len(cases), count)
+              for case in cases:
+                  assert all(case.find(tag) is None for tag in ('skipped', 'failure', 'error')), group
+                  identity = (case.get('classname'), case.get('name'))
+                  assert identity not in identities, identity
+                  identities.add(identity)
+          assert len(identities) == 181, len(identities)
+          print('PASS: all 181 distinct backend contracts executed with no skips or failures.')
+          PYTEST_REPORT
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 25
