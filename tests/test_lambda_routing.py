@@ -32,13 +32,12 @@ def test_api_gateway_proxy_preserves_application_routes(path, expected):
     ('http://localhost:3000', 200), ('https://unapproved.example', 400),
 ])
 def test_preflight_uses_cors_policy_without_a_catchall_application_route(origin, expected):
-    from backend.tests.http_client import api_client
+    from fastapi.testclient import TestClient
     from backend.main import app
-    with api_client(app) as client:
-        response = client.options('/api/v1/diagnosis', headers={
-            'Origin': origin, 'Access-Control-Request-Method': 'POST',
-            'Access-Control-Request-Headers': 'authorization,content-type',
-        })
+    response = TestClient(app).options('/api/v1/diagnosis', headers={
+        'Origin': origin, 'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'authorization,content-type',
+    })
     assert response.status_code == expected
     if expected == 200:
         assert response.headers['access-control-allow-origin'] == origin

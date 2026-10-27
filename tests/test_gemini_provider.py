@@ -138,7 +138,7 @@ def test_model_id_cannot_change_api_host_or_path(monkeypatch):
 
 
 def test_demo_http_flow_parses_gemini_output_and_persists_owner_case(tmp_path, monkeypatch):
-    from backend.tests.http_client import api_client
+    from fastapi.testclient import TestClient
     from backend.main import app, neuro_agent
     from backend.services.case_store import SQLiteCaseStore, get_case_store
 
@@ -153,7 +153,7 @@ def test_demo_http_flow_parses_gemini_output_and_persists_owner_case(tmp_path, m
     store = SQLiteCaseStore(str(tmp_path / "gemini-cases.sqlite3"))
     app.dependency_overrides[get_case_store] = lambda: store
     try:
-        with api_client(app) as client:
+        with TestClient(app) as client:
             session = client.post("/api/v1/demo/session").json()["access_token"]
             headers = {"Authorization": "Bearer " + session}
             created = client.post("/api/v1/demo/diagnosis", json={"sample_id": "fictional-headache"}, headers=headers)

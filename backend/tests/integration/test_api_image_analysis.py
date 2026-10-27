@@ -8,7 +8,7 @@ import boto3
 import pytest
 from botocore.response import StreamingBody
 from botocore.stub import ANY, Stubber
-from backend.tests.http_client import api_client
+from fastapi.testclient import TestClient
 
 from backend.main import app, neuro_agent
 from backend.utils.auth import create_access_token
@@ -27,7 +27,7 @@ def image_api(monkeypatch):
     monkeypatch.setattr(service, '_bedrock_runtime', client)
     monkeypatch.setattr(service, 'model_id', 'anthropic.claude-3-sonnet-20240229-v1:0')
     monkeypatch.delenv('S3_BUCKET_NAME', raising=False)
-    with api_client(app) as api, Stubber(client) as stub:
+    with TestClient(app) as api, Stubber(client) as stub:
         headers = {'Authorization': 'Bearer ' + create_access_token('image-owner', 'image-owner')}
         yield api, headers, stub
         stub.assert_no_pending_responses()
@@ -47,7 +47,8 @@ def upload(fixture, data=PNG, content_type='image/png'):
                     files={'file': ('synthetic.png', BytesIO(data), content_type)})
 
 
-@pytest.mark.parametrize('data,media_type', [(PNG, 'image/png'), (JPEG, 'image/jpeg')])
+@pytest.mark.parametrize('data,media_type', [(PNG, 'image/png'), (JPEG, 'image/jpeg')],
+                         ids=['png', 'jpeg'])
 def test_image_model_receives_actual_content_and_returns_provider_observations(image_api, data, media_type):
     _, _, stub = image_api
     add_response(stub)
@@ -70,7 +71,8 @@ def test_image_model_receives_actual_content_and_returns_provider_observations(i
     (PNG, 'image/gif', 415),
     (b'plain text', 'text/plain', 400),
     (PNG + b'x' * 3_750_000, 'image/png', 413),
-])
+], ids=['invalid-signature', 'media-type-mismatch', 'unsupported-image-type',
+        'unsupported-text-type', 'oversized-image'])
 def test_invalid_or_unsupported_upload_does_not_call_provider(image_api, data, media_type, status):
     assert upload(image_api, data, media_type).status_code == status
 

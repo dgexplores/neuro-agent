@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import HTTPException
-from backend.tests.http_client import api_client
+from fastapi.testclient import TestClient
 
 from backend.services.case_store import SQLiteCaseStore, get_case_store
 
@@ -60,7 +60,7 @@ def api(store, monkeypatch):
         owner: {"Authorization": "Bearer " + create_access_token(owner, owner)}
         for owner in ("alice", "bob")
     }
-    with api_client(main.app) as client:
+    with TestClient(main.app) as client:
         yield client, headers, main
     main.app.dependency_overrides.clear()
 
