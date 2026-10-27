@@ -47,7 +47,8 @@ def upload(fixture, data=PNG, content_type='image/png'):
                     files={'file': ('synthetic.png', BytesIO(data), content_type)})
 
 
-@pytest.mark.parametrize('data,media_type', [(PNG, 'image/png'), (JPEG, 'image/jpeg')])
+@pytest.mark.parametrize('data,media_type', [(PNG, 'image/png'), (JPEG, 'image/jpeg')],
+                         ids=['png', 'jpeg'])
 def test_image_model_receives_actual_content_and_returns_provider_observations(image_api, data, media_type):
     _, _, stub = image_api
     add_response(stub)
@@ -70,7 +71,8 @@ def test_image_model_receives_actual_content_and_returns_provider_observations(i
     (PNG, 'image/gif', 415),
     (b'plain text', 'text/plain', 400),
     (PNG + b'x' * 3_750_000, 'image/png', 413),
-])
+], ids=['invalid-signature', 'media-type-mismatch', 'unsupported-image-type',
+        'unsupported-text-type', 'oversized-image'])
 def test_invalid_or_unsupported_upload_does_not_call_provider(image_api, data, media_type, status):
     assert upload(image_api, data, media_type).status_code == status
 
