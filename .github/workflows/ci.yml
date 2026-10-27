@@ -8,8 +8,9 @@ permissions:
   contents: read
 jobs:
   backend-contracts:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Keep the test OS stable across ubuntu-latest image migrations.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       AWS_EC2_METADATA_DISABLED: 'true'
       AWS_REGION: us-east-1
@@ -28,18 +29,55 @@ jobs:
             requirements-test.in
       - name: Install the pinned backend and test dependencies
         run: python -m pip install -r requirements-lambda.txt -r requirements-test.in
-      - name: Run all backend contracts with bounded process and test deadlines
-        timeout-minutes: 5
-        run: >-
-          timeout --signal=ABRT --kill-after=10s 180s
-          python -X faulthandler -m pytest backend/tests tests/test_*.py
-          -vv --capture=tee-sys --timeout=45 --timeout-method=thread
-          -o faulthandler_timeout=30 --junitxml=reports/backend.xml
+      - name: Run backend unit contracts
+        if: ${{ !cancelled() }}
+        timeout-minutes: 3
+        run: |
+          # A fresh process per group prevents event-loop/client state leaking
+          # between suites. No tests are skipped; all four groups are required.
+          ulimit -c 0
+          timeout --signal=TERM --kill-after=10s 90s \
+            python -X faulthandler -m pytest -c pyproject.toml backend/tests/unit backend/tests/test_neuro_agent.py \
+            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
+            -o faulthandler_timeout=30 --junitxml=reports/backend-unit.xml
+      - name: Run backend API integration contracts
+        if: ${{ !cancelled() }}
+        timeout-minutes: 3
+        run: |
+          # A fresh process per group prevents event-loop/client state leaking
+          # between suites. No tests are skipped; all four groups are required.
+          ulimit -c 0
+          timeout --signal=TERM --kill-after=10s 90s \
+            python -X faulthandler -m pytest -c pyproject.toml backend/tests/integration \
+            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
+            -o faulthandler_timeout=30 --junitxml=reports/backend-api.xml
+      - name: Run executable acceptance scenarios
+        if: ${{ !cancelled() }}
+        timeout-minutes: 3
+        run: |
+          # A fresh process per group prevents event-loop/client state leaking
+          # between suites. No tests are skipped; all four groups are required.
+          ulimit -c 0
+          timeout --signal=TERM --kill-after=10s 90s \
+            python -X faulthandler -m pytest -c pyproject.toml backend/tests/acceptance \
+            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
+            -o faulthandler_timeout=30 --junitxml=reports/backend-acceptance.xml
+      - name: Run provider, storage and deployment contracts
+        if: ${{ !cancelled() }}
+        timeout-minutes: 3
+        run: |
+          # A fresh process per group prevents event-loop/client state leaking
+          # between suites. No tests are skipped; all four groups are required.
+          ulimit -c 0
+          timeout --signal=TERM --kill-after=10s 90s \
+            python -X faulthandler -m pytest -c pyproject.toml tests/test_*.py \
+            -vv --capture=tee-sys --timeout=45 --timeout-method=thread \
+            -o faulthandler_timeout=30 --junitxml=reports/backend-adapters.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-test-results
-          path: reports/backend.xml
+          path: reports/backend-*.xml
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 25
