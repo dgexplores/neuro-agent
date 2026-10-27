@@ -6,7 +6,7 @@ Tests the dedicated drug interaction checking endpoint
 """
 
 import pytest
-from fastapi.testclient import TestClient
+from backend.tests.http_client import api_client
 from unittest.mock import patch
 
 from backend.main import app
@@ -16,7 +16,7 @@ from backend.main import app
 @pytest.fixture
 def client():
     """Create FastAPI test client"""
-    with TestClient(app) as api:
+    with api_client(app) as api:
         yield api
 
 

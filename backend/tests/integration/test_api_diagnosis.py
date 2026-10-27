@@ -8,7 +8,7 @@ Phase 8: API Integration & Testing
 """
 
 import pytest
-from fastapi.testclient import TestClient
+from backend.tests.http_client import api_client
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
@@ -26,7 +26,7 @@ from backend.models.patient import (
 @pytest.fixture
 def client():
     """Create FastAPI test client"""
-    with TestClient(app) as api:
+    with api_client(app) as api:
         yield api
 
 

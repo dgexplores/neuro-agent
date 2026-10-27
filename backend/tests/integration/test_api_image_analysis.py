@@ -8,7 +8,7 @@ import boto3
 import pytest
 from botocore.response import StreamingBody
 from botocore.stub import ANY, Stubber
-from fastapi.testclient import TestClient
+from backend.tests.http_client import api_client
 
 from backend.main import app, neuro_agent
 from backend.utils.auth import create_access_token
@@ -27,7 +27,7 @@ def image_api(monkeypatch):
     monkeypatch.setattr(service, '_bedrock_runtime', client)
     monkeypatch.setattr(service, 'model_id', 'anthropic.claude-3-sonnet-20240229-v1:0')
     monkeypatch.delenv('S3_BUCKET_NAME', raising=False)
-    with TestClient(app) as api, Stubber(client) as stub:
+    with api_client(app) as api, Stubber(client) as stub:
         headers = {'Authorization': 'Bearer ' + create_access_token('image-owner', 'image-owner')}
         yield api, headers, stub
         stub.assert_no_pending_responses()

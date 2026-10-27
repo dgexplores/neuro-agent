@@ -4,7 +4,7 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
-from fastapi.testclient import TestClient
+from backend.tests.http_client import api_client
 from fastapi import HTTPException
 from backend.main import app, neuro_agent
 from backend.utils.auth import create_access_token
@@ -28,7 +28,7 @@ def configured(context, monkeypatch, case_store):
                 "recommendations": [], "risk_factors": [], "next_steps": []}
     stub = AsyncMock(return_value={"output": {"text": json.dumps(response)}})
     monkeypatch.setattr(neuro_agent.bedrock_service, "invoke_model_direct", stub)
-    api = context["clients"].enter_context(TestClient(app))
+    api = context["clients"].enter_context(api_client(app))
     context.update(client=api, store=case_store, stub=stub,
                    headers={"Authorization": "Bearer " + create_access_token("owner", "owner")})
 

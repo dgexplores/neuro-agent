@@ -11,7 +11,7 @@ import boto3
 from botocore.exceptions import ClientError
 from botocore.stub import Stubber
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
+from backend.tests.http_client import api_client
 import pytest
 
 from backend.services.case_store import SQLiteCaseStore, get_case_store
@@ -32,7 +32,7 @@ def api(tmp_path, monkeypatch):
     }
     analyze = AsyncMock(return_value=result)
     monkeypatch.setattr(main.neuro_agent, "analyze_case", analyze)
-    with TestClient(main.app) as client:
+    with api_client(main.app) as client:
         yield client, analyze, store
     main.app.dependency_overrides.pop(get_case_store, None)
     main.app.dependency_overrides.pop(get_demo_budget, None)
