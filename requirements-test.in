@@ -4,3 +4,5 @@ pytest-bdd==8.1.0
 pytest-cov==7.1.0
 pytest-timeout==2.4.0
 requests-mock==1.12.1
+# Starlette 1.9's supported TestClient backend; avoid the deprecated HTTPX path.
+httpx2==2.16.0
