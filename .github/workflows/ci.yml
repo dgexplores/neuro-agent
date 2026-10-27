@@ -10,6 +10,8 @@ jobs:
   backend-contracts:
     # Keep the test OS stable across ubuntu-latest image migrations.
     runs-on: ubuntu-24.04
+    # Match the Python runtime image used by both deployment Dockerfiles.
+    container: python:3.11-slim
     timeout-minutes: 15
     env:
       AWS_EC2_METADATA_DISABLED: 'true'
@@ -20,13 +22,6 @@ jobs:
       PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: |
-            requirements-lambda.txt
-            requirements-test.in
       - name: Install the pinned backend and test dependencies
         run: python -m pip install -r requirements-lambda.txt -r requirements-test.in
       - name: Run backend unit contracts
